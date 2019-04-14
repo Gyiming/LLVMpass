@@ -41,11 +41,21 @@ cd test
 if [ $? -ne 0 ]; then
 	echo "Failed to find 'test' directory; please create it and fill with a test and makefile!"
 	return -1
+fi
 
 make
-if [ $? -ne 0]; then
+if [ $? -ne 0 ]; then
 	echo "Failed to build test files via 'make'."
 	cd ..
 	return -1
-cd ..
+fi
 
+echo "Running Tests..."
+for f in *.bc; do
+	fname=${f::-3}
+	echo "Running $f..."
+	opt -load ../build/skeleton/libSkeletonPass.so -mem2reg -analyze -induction-pass < test.bc 2> "$fname.err" 1> "$fname.out"
+	if [ $? -ne 0 ]; then
+		echo "$f failed, please see $fname.err!"
+	fi
+done

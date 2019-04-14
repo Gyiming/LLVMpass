@@ -24,4 +24,4 @@ $(CPP_LLVM_BC): $(CPP_LLVM_IR)
 
 .PHONY: clean
 clean:
-		rm -f $(CPP_LLVM_IR) $(CPP_LLVM_BC) $(C_LLVM_BC) $(C_LLVM_IR)
+		rm -f $(CPP_LLVM_IR) $(CPP_LLVM_BC) $(C_LLVM_BC) $(C_LLVM_IR) $(wildcard *.out) $(wildcard *.err)

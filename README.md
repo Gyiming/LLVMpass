@@ -1,4 +1,11 @@
 # README
+
+**NEW INSTRUCTIONS:** Run `source build.sh`, it will build the skeleton, build the tests and obtain their bitcode files,
+and then run the LLVM pass over each test and output it to their respective *.err and *.out file. This should significantly
+speed up development.
+
+**ORIGINAL INSTRUCTIONS BELOW**
+
 The given code is a skeleton of a llvm pass using llvm-8 on cycle machine.
 
 ## Prepration

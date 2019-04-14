@@ -35,6 +35,17 @@ if [ $? -ne 0 ]; then
 	return -1
 fi
 
+cd ..
 echo "Building all test files..."
+cd test
+if [ $? -ne 0 ]; then
+	echo "Failed to find 'test' directory; please create it and fill with a test and makefile!"
+	return -1
 
+make
+if [ $? -ne 0]; then
+	echo "Failed to build test files via 'make'."
+	cd ..
+	return -1
+cd ..
 

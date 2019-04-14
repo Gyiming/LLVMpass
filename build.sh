@@ -35,4 +35,6 @@ if [ $? -ne 0 ]; then
 	return -1
 fi
 
-echo "Done!"
+echo "Building all test files..."
+
+

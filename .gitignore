@@ -91,3 +91,5 @@ dkms.conf
 build/
 *.swp
 .*
+*.bc
+

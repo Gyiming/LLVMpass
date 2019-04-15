@@ -54,7 +54,7 @@ echo "Running Tests..."
 for f in *.bc; do
 	fname=${f::-3}
 	echo "Running $f..."
-	opt -load ../build/skeleton/libSkeletonPass.so -mem2reg -analyze -induction-pass < test.bc 2> "$fname.err" 1> "$fname.out"
+	opt -load ../build/skeleton/libSkeletonPass.so -mem2reg -analyze -induction-pass < "$fname.bc" 2> "$fname.err" 1> "$fname.out"
 	if [ $? -ne 0 ]; then
 		echo "$f failed, please see $fname.err!"
 	fi

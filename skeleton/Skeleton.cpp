@@ -6,6 +6,7 @@
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include <set>
 using namespace llvm;
 
 // Determine if instruction I holds Induction Variable for loop L
@@ -23,6 +24,84 @@ static bool isSimpleIVUser(Instruction *I, const Loop *L, ScalarEvolution *SE) {
 
     return false;
 }
+
+/* Under Construction!!! */
+#define ILP_LE "<="
+#define ILP_GE ">="
+#define ILP_GT ">"
+#define ILP_LT "<"
+#define ILP_EQ "=="
+#define ILP_AS "="
+
+struct ILPValue {
+    ILPValue() : tag(UNINITIALIZED) {}
+    ILPValue(int val) : tag(CONSTANT), constant_value(val) {}
+    ILPValue(std::string val) : tag(VARIABLE), variable_name(val) {}
+    ILPValue(const ILPValue& other) {
+        this->tag = other.tag;
+        if (this->tag == CONSTANT) {
+            this->constant_value = other.constant_value;
+        } else {
+            this->variable_name = other.variable_name;
+        }
+    }
+    ILPValue& operator=(const ILPValue& other) {
+        this->tag = other.tag;
+        if (this->tag == CONSTANT) {
+            this->constant_value = other.constant_value;
+        } else {
+            this->variable_name = other.variable_name;
+        }
+        return *this;
+    }
+    ~ILPValue() {}
+    enum {CONSTANT, VARIABLE, UNINITIALIZED} tag;
+    union {
+        // Constant
+        int constant_value;
+        // Variable
+        std::string variable_name;
+    };
+};
+
+struct ILPConstraint {
+    ILPConstraint() {}
+    ILPConstraint(std::string op, ILPValue& v1, ILPValue& v2) {
+        this->op = op;
+        this->v1 = v1;
+        this->v2 = v2;
+    }
+    std::string op;
+    ILPValue v1;
+    ILPValue v2;
+};
+
+/*
+ *
+ * Used to pass ILP expressions.
+ *
+ */
+class ILPSolver {
+    ILPSolver() {
+        
+    }
+
+    void add_constraint(ILPConstraint& constraint) {
+        constraints.push_back(constraint);
+    }
+    
+    std::string printILP() {
+        // TODO: Iterate over vector of constraints, find all ILPValue with 'VARIABLE' tag, print that out
+        // Variables need to be printed first as '-var1 -var2 ... -varN;'
+        // Then print out all constraints recursively
+        // Constraints need to be printed out as 'var1 op var2;'
+        // You can then run lp_solve on this; I'll do this later!
+        return nullptr;
+    }
+     
+    std::vector<ILPConstraint> constraints;
+};
+
 
 namespace {
     struct SkeletonPass : public FunctionPass {

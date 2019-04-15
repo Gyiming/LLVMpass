@@ -40,7 +40,7 @@ namespace {
                     for (Instruction &instr : *block) {
                         if (isSimpleIVUser(&instr, loop, &SCE)) {
                             errs() << "Found Induction Variable: " << instr << "\n";  
-
+                            
                         }
                     }
                 }

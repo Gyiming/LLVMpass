@@ -10,54 +10,54 @@ using namespace llvm;
 
 // Determine if instruction I holds Induction Variable for loop L
 static bool isSimpleIVUser(Instruction *I, const Loop *L, ScalarEvolution *SE) {
-		if (!SE->isSCEVable(I->getType()))
-				return false;
+    if (!SE->isSCEVable(I->getType()))
+        return false;
 
-		// Get the symbolic expression for this instruction.
-		const SCEV *S = SE->getSCEV(I);
+    // Get the symbolic expression for this instruction.
+    const SCEV *S = SE->getSCEV(I);
 
-		// Only consider affine recurrences.
-		const SCEVAddRecExpr *AR = dyn_cast<SCEVAddRecExpr>(S);
-		if (AR && AR->getLoop() == L)
-				return true;
+    // Only consider affine recurrences.
+    const SCEVAddRecExpr *AR = dyn_cast<SCEVAddRecExpr>(S);
+    if (AR && AR->getLoop() == L)
+        return true;
 
-		return false;
+    return false;
 }
 
 namespace {
-		struct SkeletonPass : public FunctionPass {
-				static char ID;
-				SkeletonPass() : FunctionPass(ID) {}
+    struct SkeletonPass : public FunctionPass {
+        static char ID;
+        SkeletonPass() : FunctionPass(ID) {}
 
-				virtual bool runOnFunction(Function &F) {
-						errs() << "Processing " << F.getName() << "\n";
-						LoopInfo &LI = getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
-						errs() << "LoopInfo" << "\n";
-						ScalarEvolution &SCE = getAnalysis<ScalarEvolutionWrapperPass>().getSE();
+        virtual bool runOnFunction(Function &F) {
+            errs() << "Processing " << F.getName() << "\n";
+            LoopInfo &LI = getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
+            errs() << "LoopInfo" << "\n";
+            ScalarEvolution &SCE = getAnalysis<ScalarEvolutionWrapperPass>().getSE();
 
-						for (Loop *loop : LI) {
-								for (BasicBlock *block : loop->getBlocks()) {
-										for (Instruction &instr : *block) {
-												if (isSimpleIVUser(&instr, loop, &SCE)) {
-														errs() << "Found Induction Variable: " << instr << "\n";  
-										
-												}
-										}
-								}
-						}
-						return false;
-				}
+            for (Loop *loop : LI) {
+                for (BasicBlock *block : loop->getBlocks()) {
+                    for (Instruction &instr : *block) {
+                        if (isSimpleIVUser(&instr, loop, &SCE)) {
+                            errs() << "Found Induction Variable: " << instr << "\n";  
 
-				void getAnalysisUsage(AnalysisUsage &AU) const {
-						AU.setPreservesCFG();
-						AU.addRequired<LoopInfoWrapperPass>();
-						AU.addRequired<ScalarEvolutionWrapperPass>();
-				}
-		};
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        void getAnalysisUsage(AnalysisUsage &AU) const {
+            AU.setPreservesCFG();
+            AU.addRequired<LoopInfoWrapperPass>();
+            AU.addRequired<ScalarEvolutionWrapperPass>();
+        }
+    };
 }
 
 char SkeletonPass::ID = 0;
 
 static RegisterPass<SkeletonPass> X("induction-pass", "Induction variable identification pass",
-                             false /* Only looks at CFG */,
-                             false /* Analysis Pass */);
+        false /* Only looks at CFG */,
+        false /* Analysis Pass */);

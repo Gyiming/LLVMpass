@@ -103,6 +103,12 @@ class ILPSolver {
 };
 
 
+struct Instrecord{
+	std::string inst_type;
+	
+};	
+
+
 namespace {
     struct SkeletonPass : public FunctionPass {
         static char ID;
@@ -127,7 +133,7 @@ namespace {
 				{
 					errs() << opnd->getName() << ",";
 				}
-				else errs() << "ptr " << opnd << ",";
+				else errs() << *opnd << ",";
 			}
 			//if it's a store instruction
 			if (instr.getOpcode() == Instruction::Store)

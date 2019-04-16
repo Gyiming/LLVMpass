@@ -1,7 +1,7 @@
 void foo() {
 	int a[1000];
 	for (int i = 7; i*i < 1000; ++i) {
-		a[i] = i;
+		a[i+1] = i;
 	}
 }
 

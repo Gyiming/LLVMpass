@@ -9,6 +9,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+using namespace std;
 using namespace llvm;
 
 // Determine if instruction I holds Induction Variable for loop L
@@ -114,7 +115,7 @@ struct ILPSolver {
 
 struct Instrecord{
 	std::string inst_type;
-	
+    vector <string> inst_oper;
 };	
 
 
@@ -133,6 +134,7 @@ namespace {
                 for (BasicBlock *block : loop->getBlocks()) {
                     for (Instruction &instr : *block) {
                         errs() << instr.getOpcodeName() << ":";
+                        
                         unsigned int op_cnt = instr.getNumOperands();
                         unsigned int i;
                         for (i=0; i< op_cnt; i++)

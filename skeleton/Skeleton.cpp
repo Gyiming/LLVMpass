@@ -117,10 +117,18 @@ namespace {
             for (Loop *loop : LI) {
                 for (BasicBlock *block : loop->getBlocks()) {
                     for (Instruction &instr : *block) {
-                        if (isSimpleIVUser(&instr, loop, &SCE)) {
-                            errs() << "Found Induction Variable: " << instr << "\n";  
-                            
-                        }
+			//if it's a store instruction
+			if (instr.getOpcode() == Instruction::Store)
+			{
+				errs() << instr << "\n";
+			}
+			//if it's a load instruction 
+			if (instr.getOpcode() == Instruction::Load)
+			{
+				errs() << instr << "\n";
+			}
+			//errs() << instr << "     " << instr.getOpcode() << "\n";
+                        
                     }
                 }
             }

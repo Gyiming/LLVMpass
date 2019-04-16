@@ -7,6 +7,8 @@
 #include "llvm/Analysis/ScalarEvolutionExpressions.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include <set>
+#include <sstream>
+#include <string>
 using namespace llvm;
 
 // Determine if instruction I holds Induction Variable for loop L
@@ -36,41 +38,31 @@ static bool isSimpleIVUser(Instruction *I, const Loop *L, ScalarEvolution *SE) {
 struct ILPValue {
     ILPValue() : tag(UNINITIALIZED) {}
     ILPValue(int val) : tag(CONSTANT), constant_value(val) {}
-    ILPValue(std::string val) : tag(VARIABLE), variable_name(val) {}
-    ILPValue(const ILPValue& other) {
-        this->tag = other.tag;
-        if (this->tag == CONSTANT) {
-            this->constant_value = other.constant_value;
-        } else {
-            this->variable_name = other.variable_name;
-        }
-    }
-    ILPValue& operator=(const ILPValue& other) {
-        this->tag = other.tag;
-        if (this->tag == CONSTANT) {
-            this->constant_value = other.constant_value;
-        } else {
-            this->variable_name = other.variable_name;
-        }
-        return *this;
-    }
-    ~ILPValue() {}
+    ILPValue(StringRef val) : tag(VARIABLE), variable_name(val) {}
+
     enum {CONSTANT, VARIABLE, UNINITIALIZED} tag;
-    union {
-        // Constant
-        int constant_value;
-        // Variable
-        std::string variable_name;
-    };
+    // Constant
+    int constant_value;
+    // Variable
+    StringRef variable_name;
+
+    friend std::ostream& operator<<(std::ostream& os, const ILPValue val);
 };
+
+std::ostream& operator<<(std::ostream& os, const ILPValue val) {
+    if (val.tag == ILPValue::CONSTANT) os << val.constant_value;
+    else if (val.tag == ILPValue::VARIABLE) os << val.variable_name;
+    return os;
+}
 
 struct ILPConstraint {
     ILPConstraint() {}
-    ILPConstraint(std::string op, ILPValue& v1, ILPValue& v2) {
+    ILPConstraint(std::string op, ILPValue v1, ILPValue v2) {
         this->op = op;
         this->v1 = v1;
         this->v2 = v2;
     }
+
     std::string op;
     ILPValue v1;
     ILPValue v2;
@@ -81,12 +73,12 @@ struct ILPConstraint {
  * Used to pass ILP expressions.
  *
  */
-class ILPSolver {
+struct ILPSolver {
     ILPSolver() {
         
     }
-
-    void add_constraint(ILPConstraint& constraint) {
+    
+    void add_constraint(ILPConstraint constraint) {
         constraints.push_back(constraint);
     }
     
@@ -96,7 +88,24 @@ class ILPSolver {
         // Then print out all constraints recursively
         // Constraints need to be printed out as 'var1 op var2;'
         // You can then run lp_solve on this; I'll do this later!
-        return nullptr;
+        std::set<StringRef> variables;
+        std::stringstream str;
+        for (ILPConstraint& constraint : constraints) {
+            if (constraint.v1.tag == ILPValue::VARIABLE) {
+                variables.insert(constraint.v1.variable_name);
+            }
+            if (constraint.v2.tag == ILPValue::VARIABLE) {
+                variables.insert(constraint.v2.variable_name);
+            }
+        }
+        for (auto variable : variables) {
+            str << "-" << variable.str() << " ";
+        }
+        str << ";\n";
+        
+        // TODO: Need to print out constraints...
+
+        return str.str();
     }
      
     std::vector<ILPConstraint> constraints;
@@ -113,26 +122,40 @@ namespace {
             LoopInfo &LI = getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
             errs() << "LoopInfo" << "\n";
             ScalarEvolution &SCE = getAnalysis<ScalarEvolutionWrapperPass>().getSE();
-
+            ILPSolver solver;
             for (Loop *loop : LI) {
                 for (BasicBlock *block : loop->getBlocks()) {
                     for (Instruction &instr : *block) {
-			//if it's a store instruction
-			if (instr.getOpcode() == Instruction::Store)
-			{
-				errs() << instr << "\n";
-			}
-			//if it's a load instruction 
-			if (instr.getOpcode() == Instruction::Load)
-			{
-				errs() << instr << "\n";
-			}
-			//errs() << instr << "     " << instr.getOpcode() << "\n";
-                        
+                        instructionDispatch(solver, instr);
+                        //if it's a store instruction
+                        if (instr.getOpcode() == Instruction::Store)
+                        {
+                            errs() << instr << "\n";
+                        }
+                        //if it's a load instruction 
+                        if (instr.getOpcode() == Instruction::Load)
+                        {
+                            errs() << instr << "\n";
+                        }
+                        //errs() << instr << "     " << instr.getOpcode() << "\n";
+
                     }
                 }
             }
+
+            errs() << solver.printILP();
             return false;
+        }
+        
+        void instructionDispatch(ILPSolver& solver, Instruction &instr) {
+            switch (instr.getOpcode()) {
+                case Instruction::Store: {
+                    ILPValue lhs(instr.getOperand(1)->getName());
+                    ILPValue rhs(instr.getOperand(0)->getName());
+                    ILPConstraint constraint = ILPConstraint(ILP_AS, lhs, rhs);
+                    solver.add_constraint(constraint);
+                }
+            }
         }
 
         void getAnalysisUsage(AnalysisUsage &AU) const {

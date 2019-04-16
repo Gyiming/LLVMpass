@@ -9,6 +9,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <iostream>
 using namespace std;
 using namespace llvm;
 
@@ -113,10 +114,6 @@ struct ILPSolver {
 };
 
 
-struct Instrecord{
-	std::string inst_type;
-    vector <string> inst_oper;
-};	
 
 
 namespace {
@@ -132,20 +129,34 @@ namespace {
             ILPSolver solver;
             for (Loop *loop : LI) {
                 for (BasicBlock *block : loop->getBlocks()) {
+                    std::vector <std::vector<llvm::StringRef>> operand_records;
+                    std::vector <llvm::StringRef> instr_records;
                     for (Instruction &instr : *block) {
                         errs() << instr.getOpcodeName() << ":";
-                        
+                        std::vector <llvm::StringRef> operands;
+                        llvm::StringRef a = instr.getOpcodeName();
+                        instr_records.push_back(a);                                                    
                         unsigned int op_cnt = instr.getNumOperands();
                         unsigned int i;
+                        llvm::StringRef temp_name;
+                        
                         for (i=0; i< op_cnt; i++)
                         {
                             Value *opnd = instr.getOperand(i);
                             if (opnd->hasName())
                             {
                                 errs() << opnd->getName() << ",";
+                                temp_name = opnd->getName();
+                                operands.push_back(temp_name);
                             }
-                            else errs() << *opnd << ",";
+                            else 
+                            {
+                                errs() << *opnd << ",";
+                                        
+                            }
+                                
                         }
+                        operand_records.push_back(operands); 
                         //if it's a store instruction
                         if (instr.getOpcode() == Instruction::Store)
                         {

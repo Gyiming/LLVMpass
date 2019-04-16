@@ -117,18 +117,30 @@ namespace {
             for (Loop *loop : LI) {
                 for (BasicBlock *block : loop->getBlocks()) {
                     for (Instruction &instr : *block) {
+			errs() << instr.getOpcodeName() << ":";
+			unsigned int op_cnt = instr.getNumOperands();
+			unsigned int i;
+			for (i=0; i< op_cnt; i++)
+			{
+				Value *opnd = instr.getOperand(i);
+				if (opnd->hasName())
+				{
+					errs() << opnd->getName() << ",";
+				}
+				else errs() << "ptr " << opnd << ",";
+			}
 			//if it's a store instruction
 			if (instr.getOpcode() == Instruction::Store)
 			{
-				errs() << instr << "\n";
+				unsigned int i=0;
 			}
 			//if it's a load instruction 
 			if (instr.getOpcode() == Instruction::Load)
 			{
-				errs() << instr << "\n";
-			}
-			//errs() << instr << "     " << instr.getOpcode() << "\n";
-                        
+				unsigned int i=0;
+			}        
+
+			errs() << "\n";
                     }
                 }
             }

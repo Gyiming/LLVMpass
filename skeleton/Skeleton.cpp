@@ -105,41 +105,43 @@ namespace {
             raw_fd_ostream outputFile("output.ilp", ec, sys::fs::F_None);
             assert(ec.value() == 0);
             std::string str = solver.printILP();
-            errs() << str;
             outputFile << str;
             outputFile.flush();
             outputFile.close();
             return false;
+        }
+
+        ILPValue toILPValue(Value *value) {
+            if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(value)) 
+            {
+                return ILPValue(CI->getSExtValue());
+            }
+            else
+            {
+                return ILPValue(value->getName());
+            }
         }
         
         void instructionDispatch(ILPSolver& solver, Instruction &instr) {
             switch (instr.getOpcode()) {
                 // Store(Variable | Constant, Variable) -- Source, Destination
                 case Instruction::Store: {
-                    ILPValue lhs(instr.getOperand(1)->getName());
-                    ILPValue rhs(instr.getOperand(0)->getName());
+                    ILPValue lhs = toILPValue(instr.getOperand(1));
+                    ILPValue rhs = toILPValue(instr.getOperand(0));
                     ILPConstraint constraint = ILPConstraint(ILP_AS, lhs, rhs);
                     solver.add_constraint(constraint);
                     break;
                 }
                 case Instruction::Load:{
-                    ILPValue lhs(instr.getOperand(1)->getName());
-                    ILPValue rhs(instr.getOperand(0)->getName());
+                    ILPValue lhs = toILPValue(instr.getOperand(1));
+                    ILPValue rhs = toILPValue(instr.getOperand(0));
                     ILPConstraint constraint = ILPConstraint(ILP_AS,lhs,rhs);
                     solver.add_constraint(constraint);
                     break;
                 }
                 case Instruction::Sub:{
-                    ILPValue lhs(instr.getOperand(0)->getName());
-                    ILPValue rhs;
-                    if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(1))) 
-                    {
-                        rhs = ILPValue(CI->getSExtValue());
-                    }
-                    else
-                    {
-                        rhs = ILPValue(instr.getOperand(1)->getName());
-                    }
+                    ILPValue lhs = toILPValue(instr.getOperand(0));
+                    ILPValue rhs = toILPValue(instr.getOperand(1));
                     ILPConstraint constraint = ILPConstraint(ILP_SB, lhs, rhs, instr.getName());
                     solver.add_constraint(constraint);
                     break;  
@@ -147,43 +149,23 @@ namespace {
                 
                 // Add(Variable, Variable | Constant) -- Destination, Source
                 case Instruction::Add: {
-                    ILPValue lhs(instr.getOperand(0)->getName());
-                    ILPValue rhs;
-                    if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(1))) {
-                        rhs = ILPValue(CI->getSExtValue());
-                    } else {
-                        rhs = ILPValue(instr.getOperand(1)->getName());
-                    }
+                    ILPValue lhs = toILPValue(instr.getOperand(0));
+                    ILPValue rhs = toILPValue(instr.getOperand(1));
                     ILPConstraint constraint = ILPConstraint(ILP_PL, lhs, rhs, instr.getName());
                     solver.add_constraint(constraint);
                     break;
                 }
                 case Instruction::Mul: {
-                    ILPValue lhs;
-                    ILPValue rhs;
-                    if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(0))) {
-                        lhs = ILPValue(CI->getSExtValue());
-                    } else {
-                        lhs = ILPValue(instr.getOperand(0)->getName());
-                    }
-                    if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(1))) {
-                        rhs = ILPValue(CI->getSExtValue());
-                    } else {
-                        rhs = ILPValue(instr.getOperand(1)->getName());
-                    }
+                    ILPValue lhs = toILPValue(instr.getOperand(0));
+                    ILPValue rhs = toILPValue(instr.getOperand(1));
                     ILPConstraint constraint = ILPConstraint(ILP_MP, lhs, rhs, instr.getName());
                     solver.add_constraint(constraint);
                     break;
                 }
                 // ICmp(Variable|Constant, Variable|Constant) -- Variable < UpperBound
                 case Instruction::ICmp: {
-                    ILPValue cond(instr.getOperand(0)->getName());
-                    ILPValue bounds;
-                    if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(1))) {
-                        bounds = ILPValue(CI->getSExtValue());
-                    } else {
-                        bounds = ILPValue(instr.getOperand(1)->getName());
-                    }
+                    ILPValue cond = toILPValue(instr.getOperand(0));
+                    ILPValue bounds = toILPValue(instr.getOperand(1));
                     ILPConstraint constraint = ILPConstraint(ILP_LT, cond, bounds);
                     solver.add_constraint(constraint);
                     break;
@@ -191,12 +173,7 @@ namespace {
                 // Assumption: The first PHI operand is lower-bound
                 case Instruction::PHI: { 
                     ILPValue lhs(instr.getName());
-                    ILPValue rhs;
-                    if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(0))) {
-                        rhs = ILPValue(CI->getSExtValue());
-                    } else {
-                        rhs = ILPValue(instr.getOperand(0)->getName());
-                    }
+                    ILPValue rhs = toILPValue(instr.getOperand(0));
                     ILPConstraint constraint = ILPConstraint(ILP_GE, lhs, rhs);
                     solver.add_constraint(constraint);
                     errs() << "PHI Node Found! (" << instr.getName() << ",";

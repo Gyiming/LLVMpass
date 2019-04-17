@@ -6,8 +6,8 @@ CPP_LLVM_IR = $(CPP_SRC:.cpp=.ll)
 CPP_LLVM_BC = $(CPP_LLVM_IR:.ll=.bc)
 CC = clang
 
-CFLAGS =-O0 -Wall -Wextra -g3 -S -emit-llvm -Xclang -disable-O0-optnone -fno-discard-value-names
-CPPFLAGS = -O0 -Wall -Wextra -g3 -S -emit-llvm -Xclang -disable-O0-optnone -fno-discard-value-names
+CFLAGS =-O0 -Wall -Wextra -S -emit-llvm -Xclang -disable-O0-optnone -fno-discard-value-names
+CPPFLAGS = -O0 -Wall -Wextra -S -emit-llvm -Xclang -disable-O0-optnone -fno-discard-value-names
 AS = ./llvm-as-wrapper.py
 
 all: $(C_LLVM_BC) $(CPP_LLVM_BC)
@@ -26,4 +26,4 @@ $(CPP_LLVM_BC): $(CPP_LLVM_IR)
 
 .PHONY: clean
 clean:
-		rm -f $(CPP_LLVM_IR) $(CPP_LLVM_BC) $(C_LLVM_BC) $(C_LLVM_IR) $(wildcard *.out) $(wildcard *.err)
+		rm -f $(wildcard *.ll) $(wildcard *.bc) $(wildcard *.out) $(wildcard *.err)

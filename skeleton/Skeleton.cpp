@@ -76,6 +76,7 @@ namespace {
 
                         errs() << "\n";
                     }
+                    errs() << "Terminator: " << *block->getTerminator() << "\n";
                 }
             }
 
@@ -91,6 +92,7 @@ namespace {
                     ILPValue rhs(instr.getOperand(0)->getName());
                     ILPConstraint constraint = ILPConstraint(ILP_AS, lhs, rhs);
                     solver.add_constraint(constraint);
+                    break;
                 }
                 // Add(Variable, Variable | Constant) -- Destination, Source
                 case Instruction::Add: {
@@ -103,6 +105,37 @@ namespace {
                     }
                     ILPConstraint constraint = ILPConstraint(ILP_PL, lhs, rhs);
                     solver.add_constraint(constraint);
+                    break;
+                }
+                case Instruction::Mul: {
+                    ILPValue lhs;
+                    ILPValue rhs;
+                    if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(0))) {
+                        lhs = ILPValue(CI->getSExtValue());
+                    } else {
+                        lhs = ILPValue(instr.getOperand(0)->getName());
+                    }
+                    if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(1))) {
+                        rhs = ILPValue(CI->getSExtValue());
+                    } else {
+                        rhs = ILPValue(instr.getOperand(1)->getName());
+                    }
+                    ILPConstraint constraint = ILPConstraint(ILP_MP, lhs, rhs);
+                    solver.add_constraint(constraint);
+                    break;
+                }
+                // ICmp(Variable|Constant, Variable|Constant) -- Variable < UpperBound
+                case Instruction::ICmp: {
+                    ILPValue cond(instr.getOperand(0)->getName());
+                    ILPValue bounds;
+                    if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(1))) {
+                        bounds = ILPValue(CI->getSExtValue());
+                    } else {
+                        bounds = ILPValue(instr.getOperand(1)->getName());
+                    }
+                    ILPConstraint constraint = ILPConstraint(ILP_EQ, cond, bounds);
+                    solver.add_constraint(constraint);
+                    break;
                 }
             }
 

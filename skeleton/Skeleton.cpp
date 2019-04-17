@@ -1,4 +1,6 @@
 #include "Skeleton.hpp"
+#include "llvm/Support/Path.h"
+#include "llvm/Support/FileSystem.h"
 using namespace std;
 using namespace llvm;
 
@@ -29,9 +31,8 @@ namespace {
         virtual bool runOnFunction(Function &F) {
             errs() << "Processing " << F.getName() << "\n";
             LoopInfo &LI = getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
-            errs() << "LoopInfo" << "\n";
-            ScalarEvolution &SCE = getAnalysis<ScalarEvolutionWrapperPass>().getSE();
             ILPSolver solver;
+            
             for (Loop *loop : LI.getLoopsInPreorder()) {
                 errs() << "In loop of depth " << loop->getLoopDepth() << "\n";
                 // Get Loop Header - Where the loop condition is tested; where we determine upper-bounds of loop
@@ -99,8 +100,15 @@ namespace {
                     errs() << "Terminator: " << *block->getTerminator() << "\n";
                 } */
             }
-
-            errs() << solver.printILP();
+            
+            std::error_code ec;
+            raw_fd_ostream outputFile("output.ilp", ec, sys::fs::F_None);
+            assert(ec.value() == 0);
+            std::string str = solver.printILP();
+            errs() << str;
+            outputFile << str;
+            outputFile.flush();
+            outputFile.close();
             return false;
         }
         

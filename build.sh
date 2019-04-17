@@ -59,5 +59,18 @@ for f in *.bc; do
 	opt -load ../build/skeleton/libSkeletonPass.so -mem2reg -analyze -induction-pass < "$fname.bc" 2> "$fname.err" 1> "$fname.out"
 	if [ $? -ne 0 ]; then
 		echo "$f failed, please see $fname.err!"
-	fi
+    else
+        mv "output.ilp" "$fname.ilp"
+    fi
+done
+
+for f in *.ilp; do
+    fname=${f::-4}
+    echo "Running 'lp_solve $f'"
+    lp_solve $f
+    if [ $? -ne 0 ]; then
+        echo "$f failed!"
+    else
+        echo "$f succeeded!"
+    fi
 done

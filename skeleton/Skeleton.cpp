@@ -123,7 +123,7 @@ namespace {
                     } else {
                         rhs = ILPValue(instr.getOperand(1)->getName());
                     }
-                    ILPConstraint constraint = ILPConstraint(ILP_PL, lhs, rhs);
+                    ILPConstraint constraint = ILPConstraint(ILP_PL, lhs, rhs, instr.getName());
                     solver.add_constraint(constraint);
                     break;
                 }
@@ -140,7 +140,7 @@ namespace {
                     } else {
                         rhs = ILPValue(instr.getOperand(1)->getName());
                     }
-                    ILPConstraint constraint = ILPConstraint(ILP_MP, lhs, rhs);
+                    ILPConstraint constraint = ILPConstraint(ILP_MP, lhs, rhs, instr.getName());
                     solver.add_constraint(constraint);
                     break;
                 }
@@ -157,8 +157,18 @@ namespace {
                     solver.add_constraint(constraint);
                     break;
                 }
-                case Instruction::PHI: {
-                    errs() << "PHI Node Found! (";
+                // Assumption: The first PHI operand is lower-bound
+                case Instruction::PHI: { 
+                    ILPValue lhs(instr.getName());
+                    ILPValue rhs;
+                    if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(0))) {
+                        rhs = ILPValue(CI->getSExtValue());
+                    } else {
+                        rhs = ILPValue(instr.getOperand(0)->getName());
+                    }
+                    ILPConstraint constraint = ILPConstraint(ILP_GE, lhs, rhs);
+                    solver.add_constraint(constraint);
+                    errs() << "PHI Node Found! (" << instr.getName() << ",";
                     for (int i = 0; i < instr.getNumOperands(); i++) {
                          errs() << *instr.getOperand(i) << ",";  
                     }
@@ -167,7 +177,7 @@ namespace {
                 case Instruction::GetElementPtr: {
                     errs() << "Array Indexing Found! (";
                     for (int i = 0; i < instr.getNumOperands(); i++) {
-                         errs() << *instr.getOperand(i) << ",";  
+                         errs() << instr.getOperand(i)->getName() << ",";  
                     }
                     errs() << ")\n";
                 }

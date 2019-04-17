@@ -54,11 +54,30 @@ struct ILPConstraint {
         this->v2 = v2;
     }
 
+    ILPConstraint(std::string op, ILPValue v1, ILPValue v2, std::string var) {
+        this->op = op;
+        this->v1 = v1;
+        this->v2 = v2;
+        this->var = var;
+    }
+    
+    friend std::ostream& operator<<(std::ostream& os, const ILPConstraint val);
+
+    std::string var;
     std::string op;
     ILPValue v1;
     ILPValue v2;
 };
 
+std::ostream& operator<<(std::ostream& os, const ILPConstraint val) {
+    // Treat as assignment...
+    if (!val.var.empty()) {
+        os << val.var << " = ";
+    } 
+    os << val.v1 << " " << val.op << " " << val.v2 << ";\n";
+    return os;
+
+}
 /*
  *
  * Used to pass ILP expressions.
@@ -82,6 +101,9 @@ struct ILPSolver {
         std::set<llvm::StringRef> variables;
         std::stringstream str;
         for (ILPConstraint& constraint : constraints) {
+            if (!constraint.var.empty()) {
+                variables.insert(constraint.var);
+            }
             if (constraint.v1.tag == ILPValue::VARIABLE) {
                 variables.insert(constraint.v1.variable_name);
             }
@@ -96,7 +118,7 @@ struct ILPSolver {
         
         // TODO: Need to print out constraints...
         for (ILPConstraint& constraint : constraints) {
-            str << constraint.v1 << " " << constraint.op << " " << constraint.v2 << ";\n";
+            str << constraint;
         }
 
         return str.str();

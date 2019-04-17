@@ -122,6 +122,29 @@ namespace {
                     solver.add_constraint(constraint);
                     break;
                 }
+                case Instruction::Load:{
+                    ILPValue lhs(instr.getOperand(1)->getName());
+                    ILPValue rhs(instr.getOperand(0)->getName());
+                    ILPConstraint constraint = ILPConstraint(ILP_AS,lhs,rhs);
+                    solver.add_constraint(constraint);
+                    break;
+                }
+                case Instruction::Sub:{
+                    ILPValue lhs(instr.getOperand(0)->getName());
+                    ILPValue rhs;
+                    if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(1))) 
+                    {
+                        rhs = ILPValue(CI->getSExtValue());
+                    }
+                    else
+                    {
+                        rhs = ILPValue(instr.getOperand(1)->getName());
+                    }
+                    ILPConstraint constraint = ILPConstraint(ILP_SB, lhs, rhs, instr.getName());
+                    solver.add_constraint(constraint);
+                    break;  
+                }
+                
                 // Add(Variable, Variable | Constant) -- Destination, Source
                 case Instruction::Add: {
                     ILPValue lhs(instr.getOperand(0)->getName());

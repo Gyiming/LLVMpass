@@ -18,6 +18,7 @@
 #define ILP_GT ">"
 #define ILP_LT "<"
 #define ILP_EQ "=="
+#define ILP_NE "!="
 #define ILP_AS "="
 #define ILP_PL "+"
 #define ILP_SB "-"

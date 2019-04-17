@@ -32,7 +32,8 @@ namespace {
             errs() << "LoopInfo" << "\n";
             ScalarEvolution &SCE = getAnalysis<ScalarEvolutionWrapperPass>().getSE();
             ILPSolver solver;
-            for (Loop *loop : LI) {
+            for (Loop *loop : LI.getLoopsInPreorder()) {
+                errs() << "In loop of depth " << loop->getLoopDepth() << "\n";
                 // Get Loop Header - Where the loop condition is tested; where we determine upper-bounds of loop
                 // Hint: This is where we get Phi nodes
                 for (Instruction& instr : *loop->getHeader()) {
@@ -152,9 +153,23 @@ namespace {
                     } else {
                         bounds = ILPValue(instr.getOperand(1)->getName());
                     }
-                    ILPConstraint constraint = ILPConstraint(ILP_EQ, cond, bounds);
+                    ILPConstraint constraint = ILPConstraint(ILP_LT, cond, bounds);
                     solver.add_constraint(constraint);
                     break;
+                }
+                case Instruction::PHI: {
+                    errs() << "PHI Node Found! (";
+                    for (int i = 0; i < instr.getNumOperands(); i++) {
+                         errs() << *instr.getOperand(i) << ",";  
+                    }
+                    errs() << ")\n";
+                }
+                case Instruction::GetElementPtr: {
+                    errs() << "Array Indexing Found! (";
+                    for (int i = 0; i < instr.getNumOperands(); i++) {
+                         errs() << *instr.getOperand(i) << ",";  
+                    }
+                    errs() << ")\n";
                 }
             }
 

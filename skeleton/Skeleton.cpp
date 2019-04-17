@@ -117,7 +117,7 @@ namespace {
                 case Instruction::Load:{
                     ILPValue lhs(instr.getOperand(1)->getName());
                     ILPValue rhs(instr.getOperand(0)->getName());
-                    ILPConstraint constraint = ILP(ILP_AS,lhs,rhs);
+                    ILPConstraint constraint = ILPConstraint(ILP_AS,lhs,rhs);
                     solver.add_constraint(constraint);
                     break;
                 }
@@ -132,7 +132,7 @@ namespace {
                     {
                         rhs = ILPValue(instr.getOperand(1)->getName());
                     }
-                    ILPConstraint constraint = ILOConstraint(ILP_SB, lhs, rhs, instr.getName());
+                    ILPConstraint constraint = ILPConstraint(ILP_SB, lhs, rhs, instr.getName());
                     solver.add_constraint(constraint);
                     break;  
                 }

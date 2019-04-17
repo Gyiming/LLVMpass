@@ -33,6 +33,25 @@ namespace {
             ScalarEvolution &SCE = getAnalysis<ScalarEvolutionWrapperPass>().getSE();
             ILPSolver solver;
             for (Loop *loop : LI) {
+                // Get Loop Header - Where the loop condition is tested; where we determine upper-bounds of loop
+                // Hint: This is where we get Phi nodes
+                for (Instruction& instr : *loop->getHeader()) {
+                    instructionDispatch(solver, instr);
+                }
+
+                // Get Loop Latchs - A set of basic blocks with a backedge to the the loop head
+                // Hint: This is where we can find how much the induction variable gets incremented
+                // by in each iteration of the loop.
+                SmallVector<BasicBlock *, 1> latches;
+                loop->getLoopLatches(latches);
+                for (BasicBlock *block : latches) {
+                    for (Instruction& instr : *block) {
+                        instructionDispatch(solver, instr);
+                    }
+                }
+                
+                // No longer necessary to iterate over all blocks...
+                /* 
                 for (BasicBlock *block : loop->getBlocks()) {
                     std::vector <std::vector<llvm::StringRef>> operand_records;
                     std::vector <llvm::StringRef> instr_records;
@@ -77,7 +96,7 @@ namespace {
                         errs() << "\n";
                     }
                     errs() << "Terminator: " << *block->getTerminator() << "\n";
-                }
+                } */
             }
 
             errs() << solver.printILP();

@@ -179,7 +179,7 @@ namespace {
             {
                 case Instruction::Store: 
                     {
-                        errs() << "store" << " ";
+                        errs() << "store" << "\n";
                         instrs.push_back("Store");
 
                         /*
@@ -189,18 +189,18 @@ namespace {
                         else
                             errs() << *instr.getOperand(1) << "****\n";
                         */
-                        Value *temp1 
-                        temp1 = instr.getOperand(0);
-                        temp2 = instr.getOperand(1);
-                        std::string exp1 = getValueExpr(instr);
-                        errs() << exp1 << "*****";
+                        std::string exp1 = getValueExpr(instr.getOperand(0));
+                        errs() << exp1 << "*****\n";
+                        std::string exp2 = getValueExpr(instr.getOperand(1));
+                        errs() << exp2 << "*****\n";
                         break;    
                     }
                 case Instruction::Load:
                     {
                         instrs.push_back("Load");
-                        errs() << "load ";
-                        for (int i = 0; i < instr.getNumOperands(); i++) 
+                        //errs() << "load ";
+                        for (int i = 0; i < instr.getNumOperands(); i++)
+                        /* 
                         if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(i)))
                             errs() << CI->getSExtValue() << "~~~~\n";
                         else
@@ -210,6 +210,7 @@ namespace {
                         //ILPConstraint constraint = ILPConstraint(ILP_AS, lhs, rhs);
                         //solver.add_constraint(constraint); 
                         oprands.push_back(toILPValue(instr.getOperand(0)));
+                        */
                         break;
                     }
                 case Instruction::Add:

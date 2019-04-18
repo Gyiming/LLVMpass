@@ -143,9 +143,9 @@ namespace {
                         instrs.push_back("Store");
                         ILPValue lhs = toILPValue(instr.getOperand(1));
                         if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(1)))
-                            errs() << CI->getSExtValue() << "****";
+                            errs() << CI->getSExtValue() << "****\n";
                         else
-                            errs() << instr.getOperand(1)->getName() << "****";
+                            errs() << *instr.getOperand(1) << "****\n";
                         
                         
                         Value* temp = instr.getOperand(0);
@@ -169,6 +169,12 @@ namespace {
                 case Instruction::Load:
                     {
                         instrs.push_back("Load");
+                        errs() << "load ";
+                        for (int i = 0; i < instr.getNumOperands(); i++) 
+                        if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(i)))
+                            errs() << CI->getSExtValue() << "~~~~\n";
+                        else
+                            errs() << *instr.getOperand(i) << "~~~~\n";
                         //ILPValue lhs = toILPValue(instr.getOperand(1));
                         //ILPValue rhs = toILPValue(instr.getOperand(0));
                         //ILPConstraint constraint = ILPConstraint(ILP_AS, lhs, rhs);

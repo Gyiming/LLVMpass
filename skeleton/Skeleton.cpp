@@ -32,6 +32,12 @@ namespace {
             errs() << "Processing " << F.getName() << "\n";
             LoopInfo &LI = getAnalysis<LoopInfoWrapperPass>().getLoopInfo();
             ILPSolver solver;
+            // Note, we have one vector for this entire function (I.E this will _only_ work if we have
+            // only one loop with up to 1 loop nest!); this is because loop nests are treated as separate
+            // loops, and so we need to keep this at the top-level. If time permits, we may clear them on-demand.
+            // Vectors of previous loads to create constraints for...
+            auto loads = SmallVector<SmallVectorImpl<Value*>*,2>();
+            auto stores = SmallVector<SmallVectorImpl<Value*>*,2>();
             
             for (Loop *loop : LI.getLoopsInPreorder()) {
                 errs() << "In loop of depth " << loop->getLoopDepth() << "\n";
@@ -55,59 +61,11 @@ namespace {
                 for (BasicBlock *block : loop->getBlocks()) {
                     if (loop->isLoopLatch(block) || loop->getHeader() == block)
                         continue;
-                   for (Instruction& instr : *block) {
-                       instructionDispatchBody(solver, instr);
+                    for (Instruction& instr : *block) {
+                        instructionDispatchBody(solver, instr, loads, stores);
 
                    } 
                 }
-                
-                // No longer necessary to iterate over all blocks...
-                /* 
-                for (BasicBlock *block : loop->getBlocks()) {
-                    std::vector <std::vector<llvm::StringRef>> operand_records;
-                    std::vector <llvm::StringRef> instr_records;
-                    for (Instruction &instr : *block) {
-                        instructionDispatch(solver, instr);
-                        errs() << instr.getOpcodeName() << ":";
-                        std::vector <llvm::StringRef> operands;
-                        llvm::StringRef a = instr.getOpcodeName();
-                        instr_records.push_back(a);                                                    
-                        unsigned int op_cnt = instr.getNumOperands();
-                        unsigned int i;
-                        llvm::StringRef temp_name;
-                        
-                        for (i=0; i< op_cnt; i++)
-                        {
-                            Value *opnd = instr.getOperand(i);
-                            if (opnd->hasName())
-                            {
-                                errs() << opnd->getName() << ",";
-                                temp_name = opnd->getName();
-                                operands.push_back(temp_name);
-                            }
-                            else 
-                            {
-                                errs() << *opnd << ",";
-                                        
-                            }
-                                
-                        }
-                        operand_records.push_back(operands); 
-                        //if it's a store instruction
-                        if (instr.getOpcode() == Instruction::Store)
-                        {
-                            unsigned int i=0;
-                        }
-                        //if it's a load instruction 
-                        if (instr.getOpcode() == Instruction::Load)
-                        {
-                            unsigned int i=0;
-                        }        
-
-                        errs() << "\n";
-                    }
-                    errs() << "Terminator: " << *block->getTerminator() << "\n";
-                } */
             }
             
             std::error_code ec;
@@ -132,38 +90,40 @@ namespace {
             }
         }
     
-        void debugLoadInstr(Value *v) {
-            errs() << "Load from " + debugArrayAccess(cast<LoadInst>(v)->getPointerOperand());
+        SmallVectorImpl<Value*> *debugLoadInstr(Value *v) {
+            return debugArrayAccess(cast<LoadInst>(v)->getPointerOperand());
         }
 
-        void debugStoreInstr(Value *v) {
-            errs() << "Store into " + debugArrayAccess(cast<StoreInst>(v)->getPointerOperand());
+        SmallVectorImpl<Value*> *debugStoreInstr(Value *v) {
+            return debugArrayAccess(cast<StoreInst>(v)->getPointerOperand());
         }
-
-        std::string debugArrayAccess(Value *ptrOp) {
-            std::string arrName;
-            std::string idx1;
-            std::string idx2;
+        // Returns a vector of Value* where the first index is the Array declaration itself,
+        // and the others are indices into said index.
+        SmallVectorImpl<Value*> *debugArrayAccess(Value *ptrOp) {
+            Value *array = nullptr;
+            Value *idx1 = nullptr;
+            Value *idx2 = nullptr;
             if (GetElementPtrInst *GEP = dyn_cast<GetElementPtrInst>(ptrOp)) {
                 auto ptrOp2 = GEP->getPointerOperand();
                 errs() << "GEP indexing into " << *ptrOp2 << "\n";
                 errs() << "GEP Index is " << GEP->getOperand(GEP->getNumIndices())->getName() << "\n";
-                idx1 = GEP->getOperand(GEP->getNumIndices())->getName();
+                idx1 = GEP->getOperand(GEP->getNumIndices());
                 if (GetElementPtrInst *GEP2 = dyn_cast<GetElementPtrInst>(ptrOp2)) {
                     errs() << "GEP indexing into " << *GEP2->getPointerOperand() << "\n";
                     errs() << "GEP Index is " << GEP2->getOperand(GEP->getNumIndices())->getName() << "\n";
-                    idx2 = GEP2->getOperand(GEP->getNumIndices())->getName();
-                    arrName = GEP2->getPointerOperand()->getName();
+                    idx2 = GEP2->getOperand(GEP->getNumIndices());
+                    array = GEP2->getPointerOperand();
                 } else {
-                    arrName = GEP->getPointerOperand()->getName(); 
+                    array = GEP->getPointerOperand(); 
                 }
             }
-            
-            std::string ret =  arrName + "[" + idx1 + "]";
-            if (!idx2.empty()) {
-                ret += "[" + idx2 + "]";
+
+            auto ret = new SmallVector<Value *, 3>();
+            ret->push_back(array);
+            ret->push_back(idx1);
+            if (idx2 != nullptr) {
+                ret->push_back(idx2);
             }
-            ret += ";\n";
             return ret;
         }
         
@@ -208,14 +168,17 @@ namespace {
         }
 
 
-        void instructionDispatchBody(ILPSolver& solver, Instruction &instr) {
+        void instructionDispatchBody(ILPSolver& solver, Instruction &instr, 
+                SmallVectorImpl<SmallVectorImpl<Value *>*>& loads, 
+                SmallVectorImpl<SmallVectorImpl<Value *>*>& stores) 
+        {
             vector <ILPValue> oprands;
             vector <std::string> instrs;
             switch (instr.getOpcode())
             {
                 case Instruction::Store: 
                     {
-                        debugStoreInstr(&instr);
+                        stores.push_back(debugStoreInstr(&instr));
                         errs() << "store" << "\n";
                         instrs.push_back("Store");
 
@@ -245,7 +208,7 @@ namespace {
                     }
                 case Instruction::Load:
                     {
-                        debugLoadInstr(&instr);
+                        loads.push_back(debugLoadInstr(&instr));
                         instrs.push_back("Load");
                         errs() << "Load " << "\n";
                         int i;

@@ -313,21 +313,12 @@ namespace {
                         instrs.push_back("Sub");
                         //int num_opt  = instr.getNumOperands();
                         int i;
+                        ILPValue lhs = toILPValue(instr.getOperand(0));
+                        ILPValue rhs = toILPValue(instr.getOperand(1));
+                        ILPConstraint constraint = ILPConstraint(ILP_PL, lhs, rhs, instr.getName());
+                        solver.add_constraint(constraint);
+
                         
-                        errs() << "Sub " << "\n";
-                        for (i=0;i<instr.getNumOperands();i++)
-                        {
-                            if (instr.getOperand(i)->hasName())
-                                errs() << instr.getOperand(i)->getName() << "****\n";
-                            else if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(i)))
-                                errs() << CI->getSExtValue() << "****\n";
-                            else 
-                                {
-                                    Value* temp = instr.getOperand(i);
-                                    std::string exp = getValueExpr(temp);
-                                    errs() << exp << "****\n";
-                                }
-                        }
                         break;
                     }
 

@@ -321,6 +321,16 @@ namespace {
                         
                         break;
                     }
+                case Instruction::SExt:
+                    {
+                        instrs.push_back("Sext");
+                        ILPValue lhs = toILPValue(instr.getOperand(0));
+                        //ILPValue rhs = toILPValue(instr.getName());
+                        ILPConstraint constraint = ILPConstraint(ILP_AS, lhs, instr.getName());
+                        solver.add_constraint(constraint);
+                        errs() << "Sext----" << instr.getName() << "=" << instr.getOperand(0)->getName() << "\n";
+                        break;
+                    }
 
             
             }

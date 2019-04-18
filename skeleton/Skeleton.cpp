@@ -198,7 +198,7 @@ namespace {
                                 errs() << CI->getSExtValue() << "****\n";
                             else 
                                 {
-                                    Value *temp = *instr.getOperand(1);
+                                    Value* temp = *instr.getOperand(i);
                                     std::string exp = getValueExpr(temp);
                                     errs() << exp << "****\n";
 

@@ -121,6 +121,7 @@ namespace {
         }
 
         ILPValue toILPValue(Value *value) {
+            
             if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(value)) 
             {
                 return ILPValue(CI->getSExtValue());
@@ -132,7 +133,74 @@ namespace {
         }
         
         void instructionDispatchBody(ILPSolver& solver, Instruction &instr) {
+            vector <ILPValue> oprands;
+            vector <std::string> instrs;
+            switch (instr.getOpcode())
+            {
+                case Instruction::Store: 
+                    {
+                        errs() << "store" << " ";
+                        instrs.push_back("Store");
+                        ILPValue lhs = toILPValue(instr.getOperand(1));
+                        if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(1)))
+                            errs() << CI->getSExtValue() << "****";
+                        else
+                            errs() << instr.getOperand(1)->getName() << "****";
+                        
+                        
+                        Value* temp = instr.getOperand(0);
+                        
 
+                        
+
+                        /*      
+                        ILPValue rhs = toILPValue(instr.getOperand(0));
+                        if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(0)))
+                            errs() << CI->getSExtValue() << "****";
+                        else
+                            errs() << instr.getOperand(0)->getName() << "****"; 
+                         
+                        ILPConstraint constraint = ILPConstraint(ILP_AS, lhs, rhs);
+                        solver.add_constraint(constraint);
+                        oprands.push_back(toILPValue(instr.getOperand(0)));
+                        */
+                        break;    
+                    }
+                case Instruction::Load:
+                    {
+                        instrs.push_back("Load");
+                        //ILPValue lhs = toILPValue(instr.getOperand(1));
+                        //ILPValue rhs = toILPValue(instr.getOperand(0));
+                        //ILPConstraint constraint = ILPConstraint(ILP_AS, lhs, rhs);
+                        //solver.add_constraint(constraint); 
+                        oprands.push_back(toILPValue(instr.getOperand(0)));
+                        break;
+                    }
+                case Instruction::Add:
+                    {
+                        instrs.push_back("Add");
+                        int num_opt  = instr.getNumOperands();
+                        int i;
+                        
+                        for (i=0;i<num_opt;i++)
+                            {
+                                oprands.push_back(toILPValue(instr.getOperand(i)));
+                            }
+                        break;
+                    }
+                case Instruction::Sub:
+                    {
+                        instrs.push_back("Sub");
+                        int num_opt = instr.getNumOperands();
+                        int i;
+                        for (i=0;i<num_opt;i++)
+                            {
+                                oprands.push_back(toILPValue(instr.getOperand(i)));
+                            }
+                    }
+
+            
+            }
         }
         void instructionDispatch(ILPSolver& solver, Instruction &instr) {
             switch (instr.getOpcode()) {
@@ -155,7 +223,7 @@ namespace {
                     ILPValue lhs = toILPValue(instr.getOperand(0));
                     ILPValue rhs = toILPValue(instr.getOperand(1));
                     ILPConstraint constraint = ILPConstraint(ILP_SB, lhs, rhs, instr.getName());
-                    solver.add_constraint(constraint);
+                    //solver.add_constraint(constraint);
                     break;  
                 }
                 
@@ -164,7 +232,7 @@ namespace {
                     ILPValue lhs = toILPValue(instr.getOperand(0));
                     ILPValue rhs = toILPValue(instr.getOperand(1));
                     ILPConstraint constraint = ILPConstraint(ILP_PL, lhs, rhs, instr.getName());
-                    solver.add_constraint(constraint);
+                    //solver.add_constraint(constraint);
                     break;
                 }
                 case Instruction::Mul: {

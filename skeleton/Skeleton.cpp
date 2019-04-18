@@ -196,7 +196,14 @@ namespace {
                                 errs() << instr.getOperand(i)->getName() << "****\n";
                             else if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(i)))
                                 errs() << CI->getSExtValue() << "****\n";
-                            else errs() << *instr.getOperand(i) << "****\n";
+                            else 
+                                {
+                                    Value *temp = *instr.getOperand(1);
+                                    std::string exp = getValueExpr(temp);
+                                    errs() << exp << "****\n";
+
+                                }
+
                         }
                         break;    
                     }

@@ -219,7 +219,7 @@ namespace {
                     break;
                 }
                 case Instruction::Load:{
-                    ILPValue lhs = toILPValue(instr.getOperand(1));
+                    ILPValue lhs = ILPValue(instr.getName());
                     ILPValue rhs = toILPValue(instr.getOperand(0));
                     ILPConstraint constraint = ILPConstraint(ILP_AS,lhs,rhs);
                     solver.add_constraint(constraint);

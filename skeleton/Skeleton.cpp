@@ -198,10 +198,9 @@ namespace {
                                 errs() << CI->getSExtValue() << "****\n";
                             else 
                                 {
-                                    Value* temp = *instr.getOperand(i);
+                                    Value* temp = instr.getOperand(i);
                                     std::string exp = getValueExpr(temp);
                                     errs() << exp << "****\n";
-
                                 }
 
                         }
@@ -210,19 +209,21 @@ namespace {
                 case Instruction::Load:
                     {
                         instrs.push_back("Load");
-                        //errs() << "load ";
-                        for (int i = 0; i < instr.getNumOperands(); i++)
-                        /* 
-                        if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(i)))
-                            errs() << CI->getSExtValue() << "~~~~\n";
-                        else
-                            errs() << *instr.getOperand(i) << "~~~~\n";
-                        //ILPValue lhs = toILPValue(instr.getOperand(1));
-                        //ILPValue rhs = toILPValue(instr.getOperand(0));
-                        //ILPConstraint constraint = ILPConstraint(ILP_AS, lhs, rhs);
-                        //solver.add_constraint(constraint); 
-                        oprands.push_back(toILPValue(instr.getOperand(0)));
-                        */
+                        errs() << "load " << "\n";
+                        for (i=0;i<1;i++)
+                        {
+                            if (instr.getOperand(i)->hasName())
+                                errs() << instr.getOperand(i)->getName() << "****\n";
+                            else if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(i)))
+                                errs() << CI->getSExtValue() << "****\n";
+                            else 
+                                {
+                                    Value* temp = instr.getOperand(i);
+                                    std::string exp = getValueExpr(temp);
+                                    errs() << exp << "****\n";
+                                }
+                        }
+                        
                         break;
                     }
                 case Instruction::Add:

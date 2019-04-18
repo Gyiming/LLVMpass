@@ -189,10 +189,15 @@ namespace {
                         else
                             errs() << *instr.getOperand(1) << "****\n";
                         */
-                        std::string exp1 = getValueExpr(instr.getOperand(0));
-                        errs() << exp1 << "*****\n";
-                        std::string exp2 = getValueExpr(instr.getOperand(1));
-                        errs() << exp2 << "*****\n";
+                        int i;
+                        for (i=0;i<2;i++)
+                        {
+                            if (instr.getOperand(i)->hasName())
+                                errs() << instr.getOperand(i)->getName() << "****\n";
+                            else if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(i)))
+                                errs() << CI->getSExtValue() << "****\n";
+                            else errs() << *instr.getOperand(i) << "****\n";
+                        }
                         break;    
                     }
                 case Instruction::Load:

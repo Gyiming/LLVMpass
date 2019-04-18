@@ -67,6 +67,26 @@ namespace {
                    } 
                 }
             }
+
+            // Add constraints between loads and stores...
+            errs() << "#Loads = " << loads.size() << "\n#Stores = " << stores.size() << "\n";
+            for (SmallVectorImpl<Value *> *load : loads) {
+                for (SmallVectorImpl<Value *> *store : stores) {
+                    // TODO: Determine if indices are affine first!
+                    // If a load to an array index matches a store to the same array, they must never overlap
+                    if ((*load)[0]->getName() == (*store)[0]->getName() && load->size() == store->size()) {
+                        errs() << (*load)[0]->getName() << "[" << toILPValue((*load)[1]) << "]";
+                        if (load->size() > 2) {
+                            errs() << "[" << toILPValue((*load)[2]) << "]";
+                        }
+                        errs() << " = " << (*store)[0]->getName() << "[" << toILPValue((*store)[1]) << "]";
+                        if (store->size() > 2) {
+                            errs() << "[" << toILPValue((*store)[2]) << "]";
+                        }
+                        errs() << ";\n";
+                    }
+                }
+            }
             
             std::error_code ec;
             raw_fd_ostream outputFile("output.ilp", ec, sys::fs::F_None);

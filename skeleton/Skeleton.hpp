@@ -39,10 +39,20 @@ struct ILPValue {
     // Variable
     llvm::StringRef variable_name;
     friend std::ostream& operator<<(std::ostream& os, const ILPValue val);
+    friend llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const ILPValue val);
 };
 
 std::ostream& operator<<(std::ostream& os, const ILPValue val) {
-    
+    if (val.tag == ILPValue::CONSTANT) os << val.constant_value;
+    else if (val.tag == ILPValue::VARIABLE) {
+        std::string str = val.variable_name.str();
+        std::replace(str.begin(), str.end(), '.',  '_');
+        os << str;
+    }
+    else os << "(NULL)";
+    return os;
+}
+llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const ILPValue val) {
     if (val.tag == ILPValue::CONSTANT) os << val.constant_value;
     else if (val.tag == ILPValue::VARIABLE) {
         std::string str = val.variable_name.str();
@@ -72,6 +82,7 @@ struct ILPConstraint {
     }
     
     friend std::ostream& operator<<(std::ostream& os, const ILPConstraint val);
+    friend llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const ILPConstraint val);
 
     std::string var;
     std::string op;
@@ -80,6 +91,15 @@ struct ILPConstraint {
 };
 
 std::ostream& operator<<(std::ostream& os, const ILPConstraint val) {
+    // Treat as assignment...
+    if (!val.var.empty()) {
+        os << val.var << " = ";
+    } 
+    os << val.v1 << " " << val.op << " " << val.v2 << ";\n";
+    return os;
+
+}
+llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const ILPConstraint val) {
     // Treat as assignment...
     if (!val.var.empty()) {
         os << val.var << " = ";

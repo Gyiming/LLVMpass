@@ -30,7 +30,8 @@ struct ILPConstraint;
 struct ILPValue {
     ILPValue() : tag(UNINITIALIZED) {}
     ILPValue(int val) : tag(CONSTANT), constant_value(val) {}
-    ILPValue(llvm::StringRef val) : tag(VARIABLE), variable_name(val) {}
+    ILPValue(llvm::StringRef val) : tag(VARIABLE), variable_name(val) {
+    }
     enum {CONSTANT, VARIABLE, CONSTRAINT, UNINITIALIZED} tag;
     // Constant
     int constant_value;
@@ -40,25 +41,33 @@ struct ILPValue {
 };
 
 std::ostream& operator<<(std::ostream& os, const ILPValue val) {
+    
     if (val.tag == ILPValue::CONSTANT) os << val.constant_value;
-    else if (val.tag == ILPValue::VARIABLE) os << val.variable_name.str();
+    else if (val.tag == ILPValue::VARIABLE) {
+        std::string str = val.variable_name.str();
+        std::replace(str.begin(), str.end(), '.',  '_');
+        os << str;
+    }
     else os << "(NULL)";
     return os;
 }
 
+
 struct ILPConstraint {
     ILPConstraint() {}
     ILPConstraint(std::string op, ILPValue v1, ILPValue v2) {
-        this->op = op;
+        this->op = op; 
         this->v1 = v1;
         this->v2 = v2;
     }
 
     ILPConstraint(std::string op, ILPValue v1, ILPValue v2, std::string var) {
-        this->op = op;
+        this->op = op; 
+        std::replace(this->op.begin(), this->op.end(), '.', '_');
         this->v1 = v1;
         this->v2 = v2;
         this->var = var;
+        std::replace(this->var.begin(), this->var.end(), '.', '_');
     }
     
     friend std::ostream& operator<<(std::ostream& os, const ILPConstraint val);
@@ -112,13 +121,15 @@ struct ILPSolver {
             }
         }
         for (auto variable : variables) {
-            str << "-" << variable.str() << " ";
+            std::string tmp = variable.str();
+            std::replace(tmp.begin(), tmp.end(), '.',  '_');
+            str << "var " << tmp << ";\n";
         }
-        str << ";\n";
         
         // TODO: Need to print out constraints...
+        int constraintCount = 0;
         for (ILPConstraint& constraint : constraints) {
-            str << constraint;
+            str << "s.t. c" << constraintCount++ << ": " <<  constraint;
         }
 
         return str.str();

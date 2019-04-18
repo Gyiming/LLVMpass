@@ -66,8 +66,8 @@ done
 
 for f in *.ilp; do
     fname=${f::-4}
-    echo "Running 'lp_solve $f'"
-    lp_solve $f
+    echo "Running 'glpsol --math $f'"
+    glpsol --math $f
     if [ $? -ne 0 ]; then
         echo "$f failed!"
     else

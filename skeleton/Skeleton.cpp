@@ -51,6 +51,15 @@ namespace {
                         instructionDispatch(solver, instr);
                     }
                 }
+
+                for (BasicBlock *block : loop->getBlocks()) {
+                    if (loop->isLoopLatch(block) || loop->getHeader() == block)
+                        continue;
+                   for (Instruction& instr : *block) {
+                       instructionDispatchBody(solver, instr);
+
+                   } 
+                }
                 
                 // No longer necessary to iterate over all blocks...
                 /* 
@@ -122,6 +131,9 @@ namespace {
             }
         }
         
+        void instructionDispatchBody(ILPSolver& solver, Instruction &instr) {
+
+        }
         void instructionDispatch(ILPSolver& solver, Instruction &instr) {
             switch (instr.getOpcode()) {
                 // Store(Variable | Constant, Variable) -- Source, Destination
@@ -166,12 +178,12 @@ namespace {
                 case Instruction::ICmp: {
                     ILPValue cond = toILPValue(instr.getOperand(0));
                     ILPValue bounds = toILPValue(instr.getOperand(1));
-                    ILPConstraint constraint = ILPConstraint(ILP_LT, cond, bounds);
+                    ILPConstraint constraint = ILPConstraint(ILP_LE, cond, bounds);
                     solver.add_constraint(constraint);
                     break;
                 }
                 // Assumption: The first PHI operand is lower-bound
-                case Instruction::PHI: { 
+                case Instruction::PHI: {
                     ILPValue lhs(instr.getName());
                     ILPValue rhs = toILPValue(instr.getOperand(0));
                     ILPConstraint constraint = ILPConstraint(ILP_GE, lhs, rhs);
@@ -183,7 +195,7 @@ namespace {
                     errs() << ")\n";
                 }
                 case Instruction::GetElementPtr: {
-                    errs() << "Array Indexing Found! (";
+                    errs() << "Array Indexing Found! (" << instr.getName() << ",";
                     for (int i = 0; i < instr.getNumOperands(); i++) {
                          errs() << instr.getOperand(i)->getName() << ",";  
                     }

@@ -131,6 +131,41 @@ namespace {
                 return ILPValue(value->getName());
             }
         }
+    
+        void debugLoadInstr(Value *v) {
+            errs() << "Load from " + debugArrayAccess(cast<LoadInst>(v)->getPointerOperand());
+        }
+
+        void debugStoreInstr(Value *v) {
+            errs() << "Store into " + debugArrayAccess(cast<StoreInst>(v)->getPointerOperand());
+        }
+
+        std::string debugArrayAccess(Value *ptrOp) {
+            std::string arrName;
+            std::string idx1;
+            std::string idx2;
+            if (GetElementPtrInst *GEP = dyn_cast<GetElementPtrInst>(ptrOp)) {
+                auto ptrOp2 = GEP->getPointerOperand();
+                errs() << "GEP indexing into " << *ptrOp2 << "\n";
+                errs() << "GEP Index is " << GEP->getOperand(GEP->getNumIndices())->getName() << "\n";
+                idx1 = GEP->getOperand(GEP->getNumIndices())->getName();
+                if (GetElementPtrInst *GEP2 = dyn_cast<GetElementPtrInst>(ptrOp2)) {
+                    errs() << "GEP indexing into " << *GEP2->getPointerOperand() << "\n";
+                    errs() << "GEP Index is " << GEP2->getOperand(GEP->getNumIndices())->getName() << "\n";
+                    idx2 = GEP2->getOperand(GEP->getNumIndices())->getName();
+                    arrName = GEP2->getPointerOperand()->getName();
+                } else {
+                    arrName = GEP->getPointerOperand()->getName(); 
+                }
+            }
+            
+            std::string ret =  arrName + "[" + idx1 + "]";
+            if (!idx2.empty()) {
+                ret += "[" + idx2 + "]";
+            }
+            ret += ";\n";
+            return ret;
+        }
         
         string getValueExpr(Value* v) 
         {
@@ -169,6 +204,7 @@ namespace {
             {
                 return v->getName().str();
             }
+            else return "";
         }
 
 
@@ -179,6 +215,7 @@ namespace {
             {
                 case Instruction::Store: 
                     {
+                        debugStoreInstr(&instr);
                         errs() << "store" << "\n";
                         instrs.push_back("Store");
 
@@ -208,6 +245,7 @@ namespace {
                     }
                 case Instruction::Load:
                     {
+                        debugLoadInstr(&instr);
                         instrs.push_back("Load");
                         errs() << "Load " << "\n";
                         int i;

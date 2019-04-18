@@ -132,6 +132,46 @@ namespace {
             }
         }
         
+        string getValueExpr(Value* v) 
+        {
+            if (isa<Instruction>(v)) 
+            {
+                Instruction* inst = cast<Instruction>(v);
+            
+                switch (inst->getOpcode()) 
+                {
+                    case Instruction::Add:
+                        return "(" + getValueExpr(inst->getOperand(0)) + " + " + getValueExpr(inst->getOperand(1)) + ")";
+                        break;
+                    case Instruction::Sub:
+                        return "(" + getValueExpr(inst->getOperand(0)) + " - " + getValueExpr(inst->getOperand(1)) + ")";;
+                        break;
+                    case Instruction::Mul:
+                        return "(" + getValueExpr(inst->getOperand(0)) + " * " + getValueExpr(inst->getOperand(1)) + ")";;
+                        break;
+                    case Instruction::Alloca:
+                        return inst->getName().str();
+                    case Instruction::Load:
+                        return cast<LoadInst>(inst)->getPointerOperand()->getName().str();
+                        break;
+                    case Instruction::SExt:
+                        return getValueExpr(inst->getOperand(0));
+                    default:
+                        return "";
+                        break;
+                }
+            }
+            else if (isa<ConstantInt>(v)) 
+            {
+                return to_string(dyn_cast<ConstantInt>(v)->getValue().getSExtValue());
+            }
+            else if (v->hasName()) 
+            {
+                return v->getName().str();
+            }
+        }
+
+
         void instructionDispatchBody(ILPSolver& solver, Instruction &instr) {
             vector <ILPValue> oprands;
             vector <std::string> instrs;
@@ -139,47 +179,52 @@ namespace {
             {
                 case Instruction::Store: 
                     {
-                        errs() << "store" << " ";
+                        errs() << "store" << "\n";
                         instrs.push_back("Store");
+
+                        /*
                         ILPValue lhs = toILPValue(instr.getOperand(1));
                         if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(1)))
                             errs() << CI->getSExtValue() << "****\n";
                         else
                             errs() << *instr.getOperand(1) << "****\n";
-                        
-                        
-                        Value* temp = instr.getOperand(0);
-                        
-
-                        
-
-                        /*      
-                        ILPValue rhs = toILPValue(instr.getOperand(0));
-                        if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(0)))
-                            errs() << CI->getSExtValue() << "****";
-                        else
-                            errs() << instr.getOperand(0)->getName() << "****"; 
-                         
-                        ILPConstraint constraint = ILPConstraint(ILP_AS, lhs, rhs);
-                        solver.add_constraint(constraint);
-                        oprands.push_back(toILPValue(instr.getOperand(0)));
                         */
+                        int i;
+                        for (i=0;i<2;i++)
+                        {
+                            if (instr.getOperand(i)->hasName())
+                                errs() << instr.getOperand(i)->getName() << "****\n";
+                            else if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(i)))
+                                errs() << CI->getSExtValue() << "****\n";
+                            else 
+                                {
+                                    Value* temp = instr.getOperand(i);
+                                    std::string exp = getValueExpr(temp);
+                                    errs() << exp << "****\n";
+                                }
+
+                        }
                         break;    
                     }
                 case Instruction::Load:
                     {
                         instrs.push_back("Load");
-                        errs() << "load ";
-                        for (int i = 0; i < instr.getNumOperands(); i++) 
-                        if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(i)))
-                            errs() << CI->getSExtValue() << "~~~~\n";
-                        else
-                            errs() << *instr.getOperand(i) << "~~~~\n";
-                        //ILPValue lhs = toILPValue(instr.getOperand(1));
-                        //ILPValue rhs = toILPValue(instr.getOperand(0));
-                        //ILPConstraint constraint = ILPConstraint(ILP_AS, lhs, rhs);
-                        //solver.add_constraint(constraint); 
-                        oprands.push_back(toILPValue(instr.getOperand(0)));
+                        errs() << "Load " << "\n";
+                        int i;
+                        for (i=0;i<instr.getNumOperands();i++)
+                        {
+                            if (instr.getOperand(i)->hasName())
+                                errs() << instr.getOperand(i)->getName() << "****\n";
+                            else if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(i)))
+                                errs() << CI->getSExtValue() << "****\n";
+                            else 
+                                {
+                                    Value* temp = instr.getOperand(i);
+                                    std::string exp = getValueExpr(temp);
+                                    errs() << exp << "****\n";
+                                }
+                        }
+                        
                         break;
                     }
                 case Instruction::Add:
@@ -188,21 +233,43 @@ namespace {
                         int num_opt  = instr.getNumOperands();
                         int i;
                         
-                        for (i=0;i<num_opt;i++)
-                            {
-                                oprands.push_back(toILPValue(instr.getOperand(i)));
-                            }
+                        errs() << "Add " << "\n";
+                        for (i=0;i<instr.getNumOperands();i++)
+                        {
+                            if (instr.getOperand(i)->hasName())
+                                errs() << instr.getOperand(i)->getName() << "****\n";
+                            else if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(i)))
+                                errs() << CI->getSExtValue() << "****\n";
+                            else 
+                                {
+                                    Value* temp = instr.getOperand(i);
+                                    std::string exp = getValueExpr(temp);
+                                    errs() << exp << "****\n";
+                                }
+                        }
                         break;
                     }
                 case Instruction::Sub:
                     {
                         instrs.push_back("Sub");
-                        int num_opt = instr.getNumOperands();
+                        int num_opt  = instr.getNumOperands();
                         int i;
-                        for (i=0;i<num_opt;i++)
-                            {
-                                oprands.push_back(toILPValue(instr.getOperand(i)));
-                            }
+                        
+                        errs() << "Sub " << "\n";
+                        for (i=0;i<instr.getNumOperands();i++)
+                        {
+                            if (instr.getOperand(i)->hasName())
+                                errs() << instr.getOperand(i)->getName() << "****\n";
+                            else if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(i)))
+                                errs() << CI->getSExtValue() << "****\n";
+                            else 
+                                {
+                                    Value* temp = instr.getOperand(i);
+                                    std::string exp = getValueExpr(temp);
+                                    errs() << exp << "****\n";
+                                }
+                        }
+                        break;
                     }
 
             

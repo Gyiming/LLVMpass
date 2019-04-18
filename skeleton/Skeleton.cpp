@@ -234,7 +234,6 @@ namespace {
                         int i;
                         
                         errs() << "Add " << "\n";
-                        int i;
                         for (i=0;i<instr.getNumOperands();i++)
                         {
                             if (instr.getOperand(i)->hasName())

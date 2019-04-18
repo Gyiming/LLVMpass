@@ -55,8 +55,8 @@ for f in *.bc; do
 	fname=${f::-3}
 	echo "Running $f..."
     # Readable Bitcode after mem2reg...
-    opt -mem2reg -S < "$fname.bc" > "$fname-mem2reg.ll"
-	opt -load ../build/skeleton/libSkeletonPass.so -mem2reg -analyze -induction-pass < "$fname.bc" 2> "$fname.err" 1> "$fname.out"
+    opt -instnamer -mem2reg -S < "$fname.bc" > "$fname-mem2reg.ll"
+	opt -load ../build/skeleton/libSkeletonPass.so -instnamer -mem2reg -analyze -induction-pass < "$fname.bc" 2> "$fname.err" 1> "$fname.out"
 	if [ $? -ne 0 ]; then
 		echo "$f failed, please see $fname.err!"
     else

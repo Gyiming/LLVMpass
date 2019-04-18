@@ -126,8 +126,13 @@ namespace {
             {
                 return ILPValue(CI->getSExtValue());
             }
-            else
+            else if (value->hasName())
             {
+                return ILPValue(value->getName());
+            }
+            else {
+                value->dump();
+                errs() << value->getName() << "\n";
                 return ILPValue(value->getName());
             }
         }
@@ -268,29 +273,45 @@ namespace {
                 case Instruction::Add:
                     {
                         instrs.push_back("Add");
-                        int num_opt  = instr.getNumOperands();
+                        ILPValue lhs = toILPValue(instr.getOperand(0));
+                        ILPValue rhs = toILPValue(instr.getOperand(1));
+                        ILPConstraint constraint = ILPConstraint(ILP_PL, lhs, rhs, instr.getName());
+                    /*    //int num_opt  = instr.getNumOperands();
                         int i;
                         
                         errs() << "Add " << "\n";
-                        for (i=0;i<instr.getNumOperands();i++)
+                        std::vector <StringRef> addexpr;
+                        for (i=0;i<2;i++)
                         {
                             if (instr.getOperand(i)->hasName())
+                            {
                                 errs() << instr.getOperand(i)->getName() << "****\n";
+                                addexpr.push_back(instr.getOperand(i)->getName());
+                            }
                             else if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(i)))
+                            {
                                 errs() << CI->getSExtValue() << "****\n";
+                                addexpr.push_back(to_string(CI->getSExtValue()));
+                            }
                             else 
                                 {
                                     Value* temp = instr.getOperand(i);
                                     std::string exp = getValueExpr(temp);
                                     errs() << exp << "****\n";
+                                    addexpr.push_back(exp);
                                 }
                         }
+                        
+                        //ILPValue lhs = toILPValue(final_exp);
+                        //ILPValue rhs = toILPValue(final_dest);
+                        ILPConstraint constraint = ILPConstraint(ILP_PL,ILPValue(addexpr[0]), ILPValue(addexpr[1]), instr.getName());
+                       */ solver.add_constraint(constraint);
                         break;
                     }
                 case Instruction::Sub:
                     {
                         instrs.push_back("Sub");
-                        int num_opt  = instr.getNumOperands();
+                        //int num_opt  = instr.getNumOperands();
                         int i;
                         
                         errs() << "Sub " << "\n";

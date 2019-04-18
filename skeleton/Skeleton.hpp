@@ -32,6 +32,7 @@ struct ILPValue {
     ILPValue(int val) : tag(CONSTANT), constant_value(val) {}
     ILPValue(llvm::StringRef val) : tag(VARIABLE), variable_name(val) {
     }
+    ILPValue(std::string val) : tag(VARIABLE), variable_name(llvm::StringRef(val)){}
     enum {CONSTANT, VARIABLE, CONSTRAINT, UNINITIALIZED} tag;
     // Constant
     int constant_value;

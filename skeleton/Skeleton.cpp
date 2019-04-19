@@ -78,52 +78,84 @@ namespace {
                     // If a load to an array index matches a store to the same array, they must never overlap
                     if ((*load)[0]->getName() == (*store)[0]->getName() && load->size() == store->size()) {
                        numModifications++; 
-                        
-                        if (load->size() > 2)
-                        {
-                            Twine t("");
-                            auto temp = t.concat((*load)[1]->getName());
-                            auto concatl = temp.concat((*load)[2]->getName());
-                            auto temp2 = concatl.concat((*store)[1]->getName());
-                            auto concatr = temp2.concat((*store)[2]->getName());
-                            ILPValue lhs = ILPValue(concatl);
-                            ILPValue rhs = ILPValue(concatr);
-                            ILPConstraint constraint = ILPConstraint(ILP_EQ, lhs, rhs);
-                            solver.add_constraint(constraint);
-                        }
-                        else
-                        {
-                            auto *i1 = cast<Instruction>((*store)[1]);
-                            if (i1->getOpcode() == llvm::Instruction::SExt) {
-                                i1 = cast<Instruction>(i1->getOperand(0));
-                                errs() << "Cast to " << getValueExpr(i1);
-                            }
-                            // Update our constraints...
-                            for (auto& constraint : solver.constraints) {
-                                std::string str1;
-                                std::string str2;
-                                llvm::raw_string_ostream stream1(str1);
-                                stream1 << constraint;
-                                str1 = stream1.str();
-                                str2 =  getValueExpr(i1);
-                                std::replace(str2.begin(), str2.end(), '.',  '_');
-                                errs() << " Comparing " + str1.substr(str1.size() - str2.size() - 2) + " and " + str2 + "\n";
-                                if (str1.compare(str1.size() - str2.size() - 2, str2.size(), str2) == 0) {
-                                    errs() << "Match " << str1 << " and " << str2 << "\n";
-                                    // Modify the constraint to be the new variable...
-                                    if (constraint.v2.tag == ILPValue::VARIABLE) {                             
-                                        constraint.v2.variable_name += "0";
-                                    } else if (constraint.v1.tag == ILPValue::VARIABLE) {
-                                        constraint.v1.variable_name += "0";
-                                    }
-                                    break;
-                                }
-                            }
-                            ILPValue lhs = toILPValue((*load)[1]);
-                            ILPValue rhs = toILPValue((*store)[1]);
-                            ILPConstraint constraint = ILPConstraint(ILP_EQ, lhs, rhs);
-                            solver.add_constraint(constraint);
-                        }
+
+                       auto *i1 = cast<Instruction>((*store)[1]);
+                       if (i1->getOpcode() == llvm::Instruction::SExt) {
+                           i1 = cast<Instruction>(i1->getOperand(0));
+                           errs() << "Cast to " << getValueExpr(i1);
+                       }
+                       // Update our constraints...
+                       for (auto& constraint : solver.constraints) {
+                           std::string str1;
+                           std::string str2;
+                           llvm::raw_string_ostream stream1(str1);
+                           stream1 << constraint;
+                           str1 = stream1.str();
+                           str2 =  getValueExpr(i1);
+                           std::replace(str2.begin(), str2.end(), '.',  '_');
+                           errs() << " Comparing " + str1.substr(str1.size() - str2.size() - 2) + " and " + str2 + "\n";
+                           if (str1.compare(str1.size() - str2.size() - 2, str2.size(), str2) == 0) {
+                               errs() << "Match " << str1 << " and " << str2 << "\n";
+                               // Modify the constraint to be the new variable...
+                               if (constraint.v2.tag == ILPValue::VARIABLE) {                             
+                                   constraint.v2.variable_name += "0";
+                               } else if (constraint.v1.tag == ILPValue::VARIABLE) {
+                                   constraint.v1.variable_name += "0";
+                               }
+                               break;
+                           }
+                       }
+                       ILPValue lhs1 = toILPValue((*load)[1]);
+                       ILPValue rhs1 = toILPValue((*store)[1]);
+                       ILPConstraint constraint1 = ILPConstraint(ILP_EQ, lhs1, rhs1);
+                       if (store->size() > 2) {
+                           auto *i2 = cast<Instruction>((*store)[2]);
+                           if (i2->getOpcode() == llvm::Instruction::SExt) {
+                               i2 = cast<Instruction>(i2->getOperand(0));
+                               errs() << "Cast to " << getValueExpr(i2);
+                           }
+                           // Update our constraints...
+                           for (auto& constraint : solver.constraints) {
+                               std::string str1;
+                               std::string str2;
+                               llvm::raw_string_ostream stream1(str1);
+                               stream1 << constraint;
+                               str1 = stream1.str();
+                               str2 =  getValueExpr(i2);
+                               std::replace(str2.begin(), str2.end(), '.',  '_');
+                               errs() << " Comparing " + str1.substr(str1.size() - str2.size() - 2) + " and " + str2 + "\n";
+                               if (str1.compare(str1.size() - str2.size() - 2, str2.size(), str2) == 0) {
+                                   errs() << "Match " << str1 << " and " << str2 << "\n";
+                                   // Modify the constraint to be the new variable...
+                                   if (constraint.v2.tag == ILPValue::VARIABLE) {                             
+                                       constraint.v2.variable_name += "0";
+                                   } else if (constraint.v1.tag == ILPValue::VARIABLE) {
+                                       constraint.v1.variable_name += "0";
+                                   }
+                                   break;
+                               }
+                           }
+
+                           // Concatenate i1 and i2 such that 'constraint(i1) && constraint(i2)' must be satisfied
+                           ILPValue lhs2 = toILPValue((*load)[1]);
+                           ILPValue rhs2 = toILPValue((*store)[1]);
+                           ILPConstraint constraint2 = ILPConstraint(ILP_EQ, lhs2, rhs2);
+
+                           std::string i1Str, i2Str;
+                           llvm::raw_string_ostream i1Stream(i1Str);
+                           llvm::raw_string_ostream i2Stream(i2Str);
+                           i1Stream << constraint1;
+                           i2Stream << constraint2;
+                           i1Str = i1Stream.str();
+                           i2Str = i2Stream.str();
+                           ILPValue newLHS = ILPValue(i1Str.substr(0, i1Str.size() - 2));
+                           ILPValue newRHS = ILPValue(i2Str.substr(0, i2Str.size() - 2));
+                           ILPConstraint newConstraint(",", newLHS, newRHS);
+                           solver.add_constraint(newConstraint);
+
+                       } else {
+                           solver.add_constraint(constraint1);
+                       } 
 
 
                     }

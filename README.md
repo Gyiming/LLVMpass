@@ -1,5 +1,7 @@
 # README
 
+Authors: Louis Jenkins & Yiming Gan
+
 The given code is a skeleton of a llvm pass using llvm-8 on cycle machine building integer linear program to test the dependence inside loops.
 
 

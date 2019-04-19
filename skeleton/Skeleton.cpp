@@ -77,19 +77,7 @@ namespace {
                     if ((*load)[0]->getName() == (*store)[0]->getName() && load->size() == store->size()) {
                         //errs() << (*load)[0]->getName() << "[" << toILPValue((*load)[1]) << "]";
                         
-                        /*
-                        if (load->size() > 2) {
-                            errs() << "[" << toILPValue((*load)[2]) << "]";
-                            
-                        }
-                        errs() << " = " << (*store)[0]->getName() << "[" << toILPValue((*store)[1]) << "]";
                         
-                        ILPConstraint constraint = ILPConstraint(ILP_AS, lhs,rhs);
-                        if (store->size() > 2) {
-                            errs() << "[" << toILPValue((*store)[2]) << "]";
-                        }
-                        errs() << ";\n";
-                        */
                         if (load->size() > 2)
                         {
                             Twine t("");
@@ -139,6 +127,10 @@ namespace {
                         }
 
 
+                    }
+                    else 
+                    {
+                        //TODO add a constraint can't be achieved.
                     }
                 }
             }

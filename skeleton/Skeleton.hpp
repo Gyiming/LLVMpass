@@ -25,19 +25,30 @@
 #define ILP_DV "/"
 #define ILP_MP "*"
 
+
+static std::string to_string(llvm::Twine twine) {
+    auto stream = std::stringstream("");
+    stream << twine.str();
+    return stream.str();
+}
+
+static std::string to_string(llvm::StringRef ref) {
+    return to_string(llvm::Twine(ref));
+}
+
 struct ILPConstraint;
 
 struct ILPValue {
     ILPValue() : tag(UNINITIALIZED) {}
     ILPValue(int val) : tag(CONSTANT), constant_value(val) {}
-    ILPValue(llvm::StringRef val) : tag(VARIABLE), variable_name(val) {
-    }
-    ILPValue(std::string val) : tag(VARIABLE), variable_name(llvm::StringRef(val)){}
+    ILPValue(llvm::Twine val) : tag(VARIABLE), variable_name(to_string(val)) {}
+    ILPValue(llvm::StringRef val) : tag(VARIABLE), variable_name(to_string(val)) {}
+    ILPValue(std::string val) : tag(VARIABLE), variable_name(val){}
     enum {CONSTANT, VARIABLE, CONSTRAINT, UNINITIALIZED} tag;
     // Constant
     int constant_value;
     // Variable
-    llvm::StringRef variable_name;
+    std::string variable_name;
     friend std::ostream& operator<<(std::ostream& os, const ILPValue val);
     friend llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const ILPValue val);
 };
@@ -45,7 +56,7 @@ struct ILPValue {
 std::ostream& operator<<(std::ostream& os, const ILPValue val) {
     if (val.tag == ILPValue::CONSTANT) os << val.constant_value;
     else if (val.tag == ILPValue::VARIABLE) {
-        std::string str = val.variable_name.str();
+        std::string str = val.variable_name;
         std::replace(str.begin(), str.end(), '.',  '_');
         os << str;
     }
@@ -55,7 +66,7 @@ std::ostream& operator<<(std::ostream& os, const ILPValue val) {
 llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const ILPValue val) {
     if (val.tag == ILPValue::CONSTANT) os << val.constant_value;
     else if (val.tag == ILPValue::VARIABLE) {
-        std::string str = val.variable_name.str();
+        std::string str = val.variable_name;
         std::replace(str.begin(), str.end(), '.',  '_');
         os << str;
     }

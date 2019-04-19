@@ -70,7 +70,7 @@ for f in *.ilp; do
     if [ $? -ne 0 ]; then
         tput setaf 1 ; echo "$f failed, please see $fname.ilp!" ; tput sgr0
     fi
-    if [[ $(glpsol --math $f) == "*NO*SOLUTION*" ]]; then
+    if [[ $(glpsol --math $f) =~ (.*NO.*SOLUTION.*) ]]; then
         if [ -f "$fname.dep" ]; then
             tput setaf 1 ; echo "$f: Failed..." ; tput sgr0
         else

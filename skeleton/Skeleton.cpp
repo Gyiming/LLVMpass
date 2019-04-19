@@ -69,14 +69,15 @@ namespace {
             }
 
             // Add constraints between loads and stores...
+            // Count # of modifications we make for store-loads to the same array
+            int numModifications = 0;
             errs() << "#Loads = " << loads.size() << "\n#Stores = " << stores.size() << "\n";
             for (SmallVectorImpl<Value *> *load : loads) {
                 for (SmallVectorImpl<Value *> *store : stores) {
                     // TODO: Determine if indices are affine first!
                     // If a load to an array index matches a store to the same array, they must never overlap
                     if ((*load)[0]->getName() == (*store)[0]->getName() && load->size() == store->size()) {
-                        //errs() << (*load)[0]->getName() << "[" << toILPValue((*load)[1]) << "]";
-                        
+                       numModifications++; 
                         
                         if (load->size() > 2)
                         {
@@ -135,6 +136,13 @@ namespace {
                 }
             }
             
+            if (numModifications == 0) {
+                ILPValue lhs(0);
+                ILPValue rhs(1);
+                ILPConstraint constraint(ILP_EQ, lhs, rhs);
+                solver.add_constraint(constraint);
+            } 
+
             std::error_code ec;
             raw_fd_ostream outputFile("output.ilp", ec, sys::fs::F_None);
             assert(ec.value() == 0);

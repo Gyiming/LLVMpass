@@ -113,7 +113,7 @@ std::ostream& operator<<(std::ostream& os, const ILPConstraint val) {
 llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const ILPConstraint val) {
     // Treat as assignment...
     if (!val.var.empty()) {
-        os << val.var << " = ";
+        os << val.var << " := ";
     } 
     os << val.v1 << " " << val.op << " " << val.v2 << ";\n";
     return os;

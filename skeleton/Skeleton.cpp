@@ -75,15 +75,42 @@ namespace {
                     // TODO: Determine if indices are affine first!
                     // If a load to an array index matches a store to the same array, they must never overlap
                     if ((*load)[0]->getName() == (*store)[0]->getName() && load->size() == store->size()) {
-                        errs() << (*load)[0]->getName() << "[" << toILPValue((*load)[1]) << "]";
+                        //errs() << (*load)[0]->getName() << "[" << toILPValue((*load)[1]) << "]";
+                        
+                        /*
                         if (load->size() > 2) {
                             errs() << "[" << toILPValue((*load)[2]) << "]";
+                            
                         }
                         errs() << " = " << (*store)[0]->getName() << "[" << toILPValue((*store)[1]) << "]";
+                        
+                        ILPConstraint constraint = ILPConstraint(ILP_AS, lhs,rhs);
                         if (store->size() > 2) {
                             errs() << "[" << toILPValue((*store)[2]) << "]";
                         }
                         errs() << ";\n";
+                        */
+                        if (load->size() > 2)
+                        {
+                            Twine t("");
+                            auto temp = t.concat((*load)[1]->getName());
+                            auto concatl = temp.concat((*load)[2]->getName());
+                            auto temp2 = concatl.concat((*store)[1]->getName());
+                            auto concatr = temp2.concat((*store)[2]->getName());
+                            ILPValue lhs = ILPValue(concatl);
+                            ILPValue rhs = ILPValue(concatr);
+                            ILPConstraint constraint = ILPConstraint(ILP_EQ, lhs, rhs);
+                            solver.add_constraint(constraint);
+                        }
+                        else
+                        {
+                            ILPValue lhs = toILPValue((*load)[1]);
+                            ILPValue rhs = toILPValue((*store)[1]);
+                            ILPConstraint constraint = ILPConstraint(ILP_EQ, lhs, rhs);
+                            solver.add_constraint(constraint);
+                        }
+
+
                     }
                 }
             }
@@ -206,7 +233,6 @@ namespace {
                         stores.push_back(debugStoreInstr(&instr));
                         errs() << "store" << "\n";
                         instrs.push_back("Store");
-
                         /*
                         ILPValue lhs = toILPValue(instr.getOperand(1));
                         if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(instr.getOperand(1)))
@@ -298,7 +324,7 @@ namespace {
                         int i;
                         ILPValue lhs = toILPValue(instr.getOperand(0));
                         ILPValue rhs = toILPValue(instr.getOperand(1));
-                        ILPConstraint constraint = ILPConstraint(ILP_PL, lhs, rhs, instr.getName());
+                        ILPConstraint constraint = ILPConstraint(ILP_SB, lhs, rhs, instr.getName());
                         solver.add_constraint(constraint);
 
                         
@@ -309,7 +335,7 @@ namespace {
                         instrs.push_back("Sext");
                         ILPValue lhs = toILPValue(instr.getOperand(0));
                         //ILPValue rhs = toILPValue(instr.getName());
-                        ILPConstraint constraint = ILPConstraint(ILP_AS, lhs, instr.getName());
+                        ILPConstraint constraint = ILPConstraint(ILP_AS, instr.getName(),lhs);
                         solver.add_constraint(constraint);
                         errs() << "Sext----" << instr.getName() << "=" << instr.getOperand(0)->getName() << "\n";
                         break;

@@ -30,12 +30,14 @@ mkdir build
 This will go over the tests we have for now in the /test folder. 
 
 3. Verify with new test file
+
 We support using your own test code to verify our tools. If you have a code called test_mytest.c, add it into /test folder. If it has dependence, you also need to add a blank file named test_mytest.dep inside /test folder. And run the script with 
 ```
 ./build.sh
 ```
 
 4. Check dependence in your code
+
 If you want to check the dependence of your test file, assuming your code is called test_mycheck.c. Add it into /test folder. Run
 ```
 ./build.sh
@@ -43,7 +45,7 @@ glpsol --math test/test_mycheck.ilp
 ```
 If the results shows "LP HAS NO PRIMAL FEASIBLE SOLUTION", it means there is no dependence inside the code.
 If the results shows "OPTIMAL LP SOLUTION FOUND", it means there is a dependence inside the loop. 
-We only support 1D array for now. Using 2D array may result in an wrong answer.
+We only support 1D array for now. Using 2D array may result in a wrong answer.
 
 Or you could build from scrach
 

@@ -104,6 +104,34 @@ namespace {
                         }
                         else
                         {
+                            auto *i1 = cast<Instruction>((*store)[1]);
+                            if (i1->getOpcode() == llvm::Instruction::SExt) {
+                                i1 = cast<Instruction>(i1->getOperand(0));
+                                errs() << "Cast to " << getValueExpr(i1);
+                            }
+                            if (i1->getOpcode() == llvm::Instruction::Add) {
+                                // Update our constraints...
+                                for (auto& constraint : solver.constraints) {
+                                    std::string str1;
+                                    std::string str2;
+                                    llvm::raw_string_ostream stream1(str1);
+                                    stream1 << constraint;
+                                    str1 = stream1.str();
+                                    str2 =  getValueExpr(i1);
+                                    std::replace(str2.begin(), str2.end(), '.',  '_');
+                                    errs() << " Comparing " + str1.substr(str1.size() - str2.size() - 2) + " and " + str2 + "\n";
+                                    if (str1.compare(str1.size() - str2.size() - 2, str2.size(), str2) == 0) {
+                                        errs() << "Match " << str1 << " and " << str2 << "\n";
+                                        // Modify the constraint to be the new variable...
+                                        if (constraint.v1.tag == ILPValue::VARIABLE) {                             
+                                            constraint.v1.variable_name += "0";
+                                        } else if (constraint.v1.tag == ILPValue::VARIABLE) {
+                                            constraint.v2.variable_name += "0";
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
                             ILPValue lhs = toILPValue((*load)[1]);
                             ILPValue rhs = toILPValue((*store)[1]);
                             ILPConstraint constraint = ILPConstraint(ILP_EQ, lhs, rhs);
@@ -188,7 +216,7 @@ namespace {
                 switch (inst->getOpcode()) 
                 {
                     case Instruction::Add:
-                        return "(" + getValueExpr(inst->getOperand(0)) + " + " + getValueExpr(inst->getOperand(1)) + ")";
+                        return getValueExpr(inst->getOperand(0)) + " + " + getValueExpr(inst->getOperand(1));
                         break;
                     case Instruction::Sub:
                         return "(" + getValueExpr(inst->getOperand(0)) + " - " + getValueExpr(inst->getOperand(1)) + ")";;
@@ -199,12 +227,12 @@ namespace {
                     case Instruction::Alloca:
                         return inst->getName().str();
                     case Instruction::Load:
-                        return cast<LoadInst>(inst)->getPointerOperand()->getName().str();
+                        return to_string(cast<LoadInst>(inst)->getPointerOperand()->getName());
                         break;
                     case Instruction::SExt:
                         return getValueExpr(inst->getOperand(0));
                     default:
-                        return "";
+                        return inst->getName();
                         break;
                 }
             }
@@ -214,9 +242,12 @@ namespace {
             }
             else if (v->hasName()) 
             {
-                return v->getName().str();
+                return to_string(v->getName());
             }
-            else return "";
+            else {
+                errs() << "NO STRING FOUND FOR " << *v << "\n";
+                return "";
+            }
         }
 
 
@@ -390,6 +421,10 @@ namespace {
                     ILPValue bounds = toILPValue(instr.getOperand(1));
                     ILPConstraint constraint = ILPConstraint(ILP_LE, cond, bounds);
                     solver.add_constraint(constraint);
+                    ILPValue newCond = ILPValue(cond.variable_name + "0");
+                    ILPValue newBounds = ILPValue(cond.variable_name + " - 1");
+                    ILPConstraint newConstraint = ILPConstraint(ILP_LE, newCond, newBounds);
+                    solver.add_constraint(newConstraint);
                     break;
                 }
                 // Assumption: The first PHI operand is lower-bound

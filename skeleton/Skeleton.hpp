@@ -146,10 +146,12 @@ struct ILPSolver {
                 variables.insert(constraint.var);
             }
             if (constraint.v1.tag == ILPValue::VARIABLE) {
-                variables.insert(constraint.v1.variable_name);
+                if (constraint.v1.variable_name.find(" ") == std::string::npos)
+                    variables.insert(constraint.v1.variable_name);
             }
             if (constraint.v2.tag == ILPValue::VARIABLE) {
-                variables.insert(constraint.v2.variable_name);
+                if (constraint.v2.variable_name.find(" ") == std::string::npos)
+                    variables.insert(constraint.v2.variable_name);
             }
         }
         for (auto variable : variables) {

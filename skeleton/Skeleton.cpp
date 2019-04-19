@@ -237,6 +237,7 @@ namespace {
             return ret;
         }
         
+        //The recursive idea is inspired by Fangzhou Liu. 
         string getValueExpr(Value* v) 
         {
             if (isa<Instruction>(v)) 

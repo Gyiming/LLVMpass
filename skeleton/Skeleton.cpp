@@ -98,27 +98,25 @@ namespace {
                                 i1 = cast<Instruction>(i1->getOperand(0));
                                 errs() << "Cast to " << getValueExpr(i1);
                             }
-                            if (i1->getOpcode() == llvm::Instruction::Add) {
-                                // Update our constraints...
-                                for (auto& constraint : solver.constraints) {
-                                    std::string str1;
-                                    std::string str2;
-                                    llvm::raw_string_ostream stream1(str1);
-                                    stream1 << constraint;
-                                    str1 = stream1.str();
-                                    str2 =  getValueExpr(i1);
-                                    std::replace(str2.begin(), str2.end(), '.',  '_');
-                                    errs() << " Comparing " + str1.substr(str1.size() - str2.size() - 2) + " and " + str2 + "\n";
-                                    if (str1.compare(str1.size() - str2.size() - 2, str2.size(), str2) == 0) {
-                                        errs() << "Match " << str1 << " and " << str2 << "\n";
-                                        // Modify the constraint to be the new variable...
-                                        if (constraint.v1.tag == ILPValue::VARIABLE) {                             
-                                            constraint.v1.variable_name += "0";
-                                        } else if (constraint.v1.tag == ILPValue::VARIABLE) {
-                                            constraint.v2.variable_name += "0";
-                                        }
-                                        break;
+                            // Update our constraints...
+                            for (auto& constraint : solver.constraints) {
+                                std::string str1;
+                                std::string str2;
+                                llvm::raw_string_ostream stream1(str1);
+                                stream1 << constraint;
+                                str1 = stream1.str();
+                                str2 =  getValueExpr(i1);
+                                std::replace(str2.begin(), str2.end(), '.',  '_');
+                                errs() << " Comparing " + str1.substr(str1.size() - str2.size() - 2) + " and " + str2 + "\n";
+                                if (str1.compare(str1.size() - str2.size() - 2, str2.size(), str2) == 0) {
+                                    errs() << "Match " << str1 << " and " << str2 << "\n";
+                                    // Modify the constraint to be the new variable...
+                                    if (constraint.v2.tag == ILPValue::VARIABLE) {                             
+                                        constraint.v2.variable_name += "0";
+                                    } else if (constraint.v1.tag == ILPValue::VARIABLE) {
+                                        constraint.v1.variable_name += "0";
                                     }
+                                    break;
                                 }
                             }
                             ILPValue lhs = toILPValue((*load)[1]);
@@ -219,10 +217,10 @@ namespace {
                         return getValueExpr(inst->getOperand(0)) + " + " + getValueExpr(inst->getOperand(1));
                         break;
                     case Instruction::Sub:
-                        return "(" + getValueExpr(inst->getOperand(0)) + " - " + getValueExpr(inst->getOperand(1)) + ")";;
+                        return getValueExpr(inst->getOperand(0)) + " - " + getValueExpr(inst->getOperand(1));
                         break;
                     case Instruction::Mul:
-                        return "(" + getValueExpr(inst->getOperand(0)) + " * " + getValueExpr(inst->getOperand(1)) + ")";;
+                        return getValueExpr(inst->getOperand(0)) + " * " + getValueExpr(inst->getOperand(1));
                         break;
                     case Instruction::Alloca:
                         return inst->getName().str();
